@@ -23,6 +23,8 @@ const SupportBubble = ({ socket, addNotification }) => {
                 addNotification(t('support.success') || 'Mensagem enviada com sucesso!', 'success');
                 setMessage('');
                 setIsOpen(false);
+            } else {
+                addNotification(res.error || 'Erro ao enviar mensagem.', 'error');
             }
             setSending(false);
             socket.off('support_ticket_sent', handleResponse);
