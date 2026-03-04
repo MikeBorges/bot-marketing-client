@@ -11,7 +11,9 @@ const resources = {
                 "online": "Online",
                 "offline": "Offline",
                 "mainAccount": "Conta Principal",
-                "dash": "Dash"
+                "dash": "Dash",
+                "subscription": "Assinatura",
+                "logout": "Sair"
             },
             "menu": {
                 "dashboard": "Dashboard",

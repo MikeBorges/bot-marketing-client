@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImageIcon, Tag, Percent, AlignLeft, CheckCircle2 } from 'lucide-react';
+import { ImageIcon, Tag, Percent, AlignLeft, CheckCircle2, Plus, X } from 'lucide-react';
 
 const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
     const { t } = useTranslation();
     const [couponInput, setCouponInput] = useState('');
+    const [couponDetails, setCouponDetails] = useState({ discount: '', minPurchase: '', validity: '' });
 
     const handleFrameUpload = (e) => {
         const file = e.target.files[0];
@@ -23,25 +24,34 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
     const addCoupon = () => {
         if (!couponInput.trim()) return;
         const currentCoupons = autoConfig.promoConfig?.coupons || [];
-        if (!currentCoupons.includes(couponInput.trim().toUpperCase())) {
+        const code = couponInput.trim().toUpperCase();
+
+        // Verifica se já existe (preservando compatibilidade com strings antigas)
+        const exists = currentCoupons.some(c => (typeof c === 'string' ? c : c.code) === code);
+
+        if (!exists) {
             setAutoConfig({
                 ...autoConfig,
                 promoConfig: {
                     ...autoConfig.promoConfig,
-                    coupons: [...currentCoupons, couponInput.trim().toUpperCase()]
+                    coupons: [...currentCoupons, {
+                        code,
+                        ...couponDetails
+                    }]
                 }
             });
         }
         setCouponInput('');
+        setCouponDetails({ discount: '', minPurchase: '', validity: '' });
     };
 
-    const removeCoupon = (cp) => {
+    const removeCoupon = (cpCode) => {
         const currentCoupons = autoConfig.promoConfig?.coupons || [];
         setAutoConfig({
             ...autoConfig,
             promoConfig: {
                 ...autoConfig.promoConfig,
-                coupons: currentCoupons.filter(c => c !== cp)
+                coupons: currentCoupons.filter(c => (typeof c === 'string' ? c : c.code) !== cpCode)
             }
         });
     };
@@ -131,29 +141,57 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                         <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
                             <Tag size={14} /> Meus Cupons
                         </label>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                             <input
                                 type="text"
                                 value={couponInput}
                                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                                 onKeyDown={(e) => e.key === 'Enter' && addCoupon()}
-                                placeholder="Ex: PROMO10"
-                                className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
+                                placeholder="CÓDIGO (Ex: PROMO10)"
+                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
                             />
-                            <button
-                                onClick={addCoupon}
-                                className="px-3 py-2 bg-whatsapp/10 text-whatsapp border border-whatsapp/20 rounded-lg text-xs font-bold"
-                            >
-                                Add
-                            </button>
+                            <input
+                                type="text"
+                                value={couponDetails.discount}
+                                onChange={(e) => setCouponDetails({ ...couponDetails, discount: e.target.value })}
+                                placeholder="Desconto (Ex: 10% OFF)"
+                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
+                            />
+                            <input
+                                type="text"
+                                value={couponDetails.minPurchase}
+                                onChange={(e) => setCouponDetails({ ...couponDetails, minPurchase: e.target.value })}
+                                placeholder="Mínimo (Ex: R$ 100)"
+                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
+                            />
+                            <input
+                                type="text"
+                                value={couponDetails.validity}
+                                onChange={(e) => setCouponDetails({ ...couponDetails, validity: e.target.value })}
+                                placeholder="Validade (Ex: Hoje)"
+                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
+                            />
                         </div>
+                        <button
+                            onClick={addCoupon}
+                            className="w-full mt-2 px-3 py-2 bg-whatsapp/10 text-whatsapp border border-whatsapp/20 rounded-lg text-xs font-bold hover:bg-whatsapp/20 transition-all"
+                        >
+                            + Adicionar Cupom Detalhado
+                        </button>
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                            {config.coupons.map((cp, i) => (
-                                <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] font-bold text-slate-300">
-                                    {cp}
-                                    <button onClick={() => removeCoupon(cp)} className="text-slate-500 hover:text-red-400">×</button>
-                                </div>
-                            ))}
+                            {config.coupons.map((cp, i) => {
+                                const code = typeof cp === 'string' ? cp : cp.code;
+                                const discount = typeof cp === 'object' ? cp.discount : '';
+                                return (
+                                    <div key={i} className="flex flex-col gap-0.5 px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] font-bold text-slate-300 group relative">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <span className="text-whatsapp">{code}</span>
+                                            <button onClick={() => removeCoupon(code)} className="text-slate-500 hover:text-red-400">×</button>
+                                        </div>
+                                        {discount && <span className="text-[8px] text-slate-500 font-normal">{discount}</span>}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -174,7 +212,7 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                             placeholder="Sua mensagem..."
                         />
                         <div className="flex flex-wrap gap-2">
-                            {['{titulo}', '{precoOriginal}', '{precoPromo}', '{cupom}', '{link}'].map(tag => (
+                            {['{titulo}', '{precoOriginal}', '{precoPromo}', '{cupom}', '{cupom_desconto}', '{cupom_minimo}', '{cupom_validade}', '{link}'].map(tag => (
                                 <button
                                     key={tag}
                                     onClick={() => setAutoConfig({

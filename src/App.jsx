@@ -921,16 +921,14 @@ function App() {
                   handleSaveConfig={handleSaveConfig}
                 />
 
-                {/* ── Campanhas Agendadas (Escondido no Básico) ── */}
-                {userPlan !== 'basic' && (
-                  <ScheduledMessages
-                    groups={groups}
-                    scheduledMessages={scheduledMessages}
-                    onAdd={handleAddScheduled}
-                    onEdit={handleEditScheduled}
-                    onDelete={handleDeleteScheduled}
-                  />
-                )}
+                {/* ── Campanhas Agendadas ── */}
+                <ScheduledMessages
+                  groups={groups}
+                  scheduledMessages={scheduledMessages}
+                  onAdd={handleAddScheduled}
+                  onEdit={handleEditScheduled}
+                  onDelete={handleDeleteScheduled}
+                />
 
                 {/* ── Nota de Lógica ── */}
                 <div className="flex gap-3 items-start p-4 rounded-xl" style={{ background: 'rgba(124,111,255,0.05)', border: '1px solid rgba(124,111,255,0.1)' }}>

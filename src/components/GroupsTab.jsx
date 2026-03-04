@@ -22,6 +22,7 @@ const GroupsTab = ({
     const [newGroupName, setNewGroupName] = useState('');
     const [newGroupDesc, setNewGroupDesc] = useState('');
     const [newGroupIndex, setNewGroupIndex] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'participants', direction: 'desc' });
 
     const finalGroupName = () => {
         const name = newGroupName.trim();
@@ -51,6 +52,35 @@ const GroupsTab = ({
         const createdAt = stats?.[g.id]?.createdAt || null;
         return { ...g, views, viewsPct, createdAt };
     });
+
+    const sortedData = [...analysisData].sort((a, b) => {
+        if (!sortConfig.key) return 0;
+        let valA = a[sortConfig.key];
+        let valB = b[sortConfig.key];
+
+        // Fallbacks para nulos
+        if (valA === null || valA === undefined) valA = 0;
+        if (valB === null || valB === undefined) valB = 0;
+
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const requestSort = (key) => {
+        let direction = 'desc';
+        if (sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const SortIcon = ({ column }) => {
+        if (sortConfig.key !== column) return <TrendingUp size={10} className="ml-1 opacity-20" />;
+        return sortConfig.direction === 'desc'
+            ? <TrendingUp size={10} className="ml-1 text-whatsapp" style={{ transform: 'rotate(180deg)' }} />
+            : <TrendingUp size={10} className="ml-1 text-whatsapp" />;
+    };
 
     const totalMembers = analysisData.reduce((a, g) => a + g.participants, 0);
     const totalViews = analysisData.reduce((a, g) => a + g.views, 0);
@@ -377,17 +407,41 @@ const GroupsTab = ({
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-white/5">
-                                <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold">{t('groups.analysis.colGroup')}</th>
-                                <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold">{t('groups.analysis.colMembers')}</th>
+                                <th
+                                    className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                    onClick={() => requestSort('name')}
+                                >
+                                    <div className="flex items-center">{t('groups.analysis.colGroup')} <SortIcon column="name" /></div>
+                                </th>
+                                <th
+                                    className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                    onClick={() => requestSort('participants')}
+                                >
+                                    <div className="flex items-center justify-end">{t('groups.analysis.colMembers')} <SortIcon column="participants" /></div>
+                                </th>
                                 <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold hidden md:table-cell">{t('groups.analysis.colCapacity')}</th>
-                                <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold">{t('groups.analysis.colViews')}</th>
-                                <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold">{t('groups.analysis.colViewsPct')}</th>
-                                <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold hidden lg:table-cell">{t('groups.analysis.colCreated')}</th>
+                                <th
+                                    className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                    onClick={() => requestSort('views')}
+                                >
+                                    <div className="flex items-center justify-end">{t('groups.analysis.colViews')} <SortIcon column="views" /></div>
+                                </th>
+                                <th
+                                    className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                    onClick={() => requestSort('viewsPct')}
+                                >
+                                    <div className="flex items-center justify-end">{t('groups.analysis.colViewsPct')} <SortIcon column="viewsPct" /></div>
+                                </th>
+                                <th
+                                    className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors hidden lg:table-cell"
+                                    onClick={() => requestSort('createdAt')}
+                                >
+                                    <div className="flex items-center justify-end">{t('groups.analysis.colCreated')} <SortIcon column="createdAt" /></div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {analysisData
-                                .sort((a, b) => b.participants - a.participants)
+                            {sortedData
                                 .map((g, idx) => {
                                     const capacityPct = autoConfig?.threshold > 0
                                         ? Math.min(100, (g.participants / autoConfig.threshold) * 100)
