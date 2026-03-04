@@ -6,6 +6,8 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
     const { t } = useTranslation();
     const [couponInput, setCouponInput] = useState('');
     const [couponDetails, setCouponDetails] = useState({ discount: '', minPurchase: '', validity: '' });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingIndex, setEditingIndex] = useState(null);
 
     const handleFrameUpload = (e) => {
         const file = e.target.files[0];
@@ -21,28 +23,54 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
         reader.readAsDataURL(file);
     };
 
-    const addCoupon = () => {
-        if (!couponInput.trim()) return;
-        const currentCoupons = autoConfig.promoConfig?.coupons || [];
-        const code = couponInput.trim().toUpperCase();
-
-        // Verifica se já existe (preservando compatibilidade com strings antigas)
-        const exists = currentCoupons.some(c => (typeof c === 'string' ? c : c.code) === code);
-
-        if (!exists) {
-            setAutoConfig({
-                ...autoConfig,
-                promoConfig: {
-                    ...autoConfig.promoConfig,
-                    coupons: [...currentCoupons, {
-                        code,
-                        ...couponDetails
-                    }]
-                }
-            });
+    const openModal = (index = null) => {
+        if (index !== null) {
+            const cp = autoConfig.promoConfig?.coupons[index];
+            setEditingIndex(index);
+            if (typeof cp === 'string') {
+                setCouponInput(cp);
+                setCouponDetails({ discount: '', minPurchase: '', validity: '' });
+            } else {
+                setCouponInput(cp.code);
+                setCouponDetails({
+                    discount: cp.discount || '',
+                    minPurchase: cp.minPurchase || '',
+                    validity: cp.validity || ''
+                });
+            }
+        } else {
+            setEditingIndex(null);
+            setCouponInput('');
+            setCouponDetails({ discount: '', minPurchase: '', validity: '' });
         }
-        setCouponInput('');
-        setCouponDetails({ discount: '', minPurchase: '', validity: '' });
+        setIsModalOpen(true);
+    };
+
+    const saveCoupon = () => {
+        if (!couponInput.trim()) return;
+        const currentCoupons = [...(autoConfig.promoConfig?.coupons || [])];
+        const code = couponInput.trim().toUpperCase();
+        const newCoupon = { code, ...couponDetails };
+
+        if (editingIndex !== null) {
+            currentCoupons[editingIndex] = newCoupon;
+        } else {
+            // Verifica se já existe para novos
+            if (currentCoupons.some(c => (typeof c === 'string' ? c : c.code) === code)) {
+                alert("Este código de cupom já existe!");
+                return;
+            }
+            currentCoupons.push(newCoupon);
+        }
+
+        setAutoConfig({
+            ...autoConfig,
+            promoConfig: {
+                ...autoConfig.promoConfig,
+                coupons: currentCoupons
+            }
+        });
+        setIsModalOpen(false);
     };
 
     const removeCoupon = (cpCode) => {
@@ -137,61 +165,57 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                            <Tag size={14} /> Meus Cupons
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <input
-                                type="text"
-                                value={couponInput}
-                                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                                onKeyDown={(e) => e.key === 'Enter' && addCoupon()}
-                                placeholder="CÓDIGO (Ex: PROMO10)"
-                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
-                            />
-                            <input
-                                type="text"
-                                value={couponDetails.discount}
-                                onChange={(e) => setCouponDetails({ ...couponDetails, discount: e.target.value })}
-                                placeholder="Desconto (Ex: 10% OFF)"
-                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
-                            />
-                            <input
-                                type="text"
-                                value={couponDetails.minPurchase}
-                                onChange={(e) => setCouponDetails({ ...couponDetails, minPurchase: e.target.value })}
-                                placeholder="Mínimo (Ex: R$ 100)"
-                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
-                            />
-                            <input
-                                type="text"
-                                value={couponDetails.validity}
-                                onChange={(e) => setCouponDetails({ ...couponDetails, validity: e.target.value })}
-                                placeholder="Validade (Ex: Hoje)"
-                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-whatsapp/50"
-                            />
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                                <Tag size={14} /> Meus Cupons
+                            </label>
+                            <button
+                                onClick={() => openModal()}
+                                className="px-3 py-1.5 bg-whatsapp/10 hover:bg-whatsapp/20 text-whatsapp border border-whatsapp/20 rounded-lg text-xs font-bold transition-all flex items-center gap-2"
+                            >
+                                <Plus size={14} /> Novo Cupom
+                            </button>
                         </div>
-                        <button
-                            onClick={addCoupon}
-                            className="w-full mt-2 px-3 py-2 bg-whatsapp/10 text-whatsapp border border-whatsapp/20 rounded-lg text-xs font-bold hover:bg-whatsapp/20 transition-all"
-                        >
-                            + Adicionar Cupom Detalhado
-                        </button>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                            {config.coupons.map((cp, i) => {
-                                const code = typeof cp === 'string' ? cp : cp.code;
-                                const discount = typeof cp === 'object' ? cp.discount : '';
-                                return (
-                                    <div key={i} className="flex flex-col gap-0.5 px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] font-bold text-slate-300 group relative">
-                                        <div className="flex items-center justify-between gap-4">
-                                            <span className="text-whatsapp">{code}</span>
-                                            <button onClick={() => removeCoupon(code)} className="text-slate-500 hover:text-red-400">×</button>
-                                        </div>
-                                        {discount && <span className="text-[8px] text-slate-500 font-normal">{discount}</span>}
-                                    </div>
-                                );
-                            })}
+
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                            {config.coupons.length === 0 ? (
+                                <div className="bg-black/20 border border-white/5 rounded-xl p-6 text-center">
+                                    <Tag className="mx-auto text-slate-700 mb-2" size={24} />
+                                    <p className="text-xs text-slate-500 italic">Nenhum cupom configurado.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-2">
+                                    {config.coupons.map((cp, i) => {
+                                        const code = typeof cp === 'string' ? cp : cp.code;
+                                        const discount = typeof cp === 'object' ? cp.discount : '';
+                                        return (
+                                            <div key={i} className="flex items-center justify-between gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:border-whatsapp/30 transition-all group">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold text-whatsapp">{code}</span>
+                                                    {discount && <span className="text-[10px] text-slate-400">{discount}</span>}
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => openModal(i)}
+                                                        className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all"
+                                                        title="Editar"
+                                                    >
+                                                        <AlignLeft size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => removeCoupon(code)}
+                                                        className="p-1.5 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-400 transition-all"
+                                                        title="Excluir"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -238,6 +262,87 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Configuração de Cupom */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+                    <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden relative shadow-2xl animate-in zoom-in duration-200">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <Tag className="text-whatsapp" size={20} />
+                                    {editingIndex !== null ? 'Editar Cupom' : 'Novo Cupom'}
+                                </h4>
+                                <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Código do Cupom</label>
+                                    <input
+                                        type="text"
+                                        value={couponInput}
+                                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                        placeholder="Ex: PROMO10"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-whatsapp/50 transition-all font-bold tracking-wider"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Desconto</label>
+                                        <input
+                                            type="text"
+                                            value={couponDetails.discount}
+                                            onChange={(e) => setCouponDetails({ ...couponDetails, discount: e.target.value })}
+                                            placeholder="Ex: 10% OFF"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-whatsapp/50 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Compra Mínima</label>
+                                        <input
+                                            type="text"
+                                            value={couponDetails.minPurchase}
+                                            onChange={(e) => setCouponDetails({ ...couponDetails, minPurchase: e.target.value })}
+                                            placeholder="Ex: Acima de R$ 100"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-whatsapp/50 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Validade</label>
+                                        <input
+                                            type="text"
+                                            value={couponDetails.validity}
+                                            onChange={(e) => setCouponDetails({ ...couponDetails, validity: e.target.value })}
+                                            placeholder="Ex: Expira hoje"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-whatsapp/50 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 mt-8">
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={saveCoupon}
+                                    className="flex-1 px-4 py-3 bg-whatsapp text-white hover:bg-whatsapp-dark rounded-xl text-sm font-bold transition-all shadow-lg shadow-whatsapp/20"
+                                >
+                                    {editingIndex !== null ? 'Salvar Mudanças' : 'Criar Cupom'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
