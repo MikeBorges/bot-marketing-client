@@ -29,6 +29,7 @@ import ScheduledMessages from './components/ScheduledMessages';
 import MercadoLivreTab from './components/MercadoLivreTab';
 import ChatbotTab from './components/ChatbotTab';
 import PromoConfig from './components/PromoConfig';
+import SupportBubble from './components/SupportBubble';
 import AuthPage from './components/AuthPage';
 import AdminTab from './components/AdminTab';
 
@@ -241,6 +242,19 @@ function App() {
     // For now, we can set a timeout or rely on a success/error event from the backend
     // setTimeout(() => setIsCreating(false), 3000); // Example: reset after 3 seconds
   };
+
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    const handleNewTicket = (ticket) => {
+      if (ticket.user_email !== user.email && (user.role === 'admin' || user.role === 'super_admin')) {
+        addNotification(`🆘 Novo Ticket de ${ticket.user_name}: ${ticket.category.toUpperCase()}`, 'info');
+      }
+    };
+
+    socket.on('new_support_ticket', handleNewTicket);
+    return () => socket.off('new_support_ticket', handleNewTicket);
+  }, [socket, user]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -824,6 +838,7 @@ function App() {
                 userEmail={userEmail}
                 userRole={userRole}
                 addNotification={addNotification}
+                socket={socket}
               />
             )}
 
@@ -1183,6 +1198,10 @@ function App() {
           />
         </div> {/* end max-w-6xl wrapper */}
       </main>
+      <NotificationContainer notifications={notifications} onClose={removeNotification} />
+      {user && socket && (
+        <SupportBubble socket={socket} addNotification={addNotification} />
+      )}
     </div>
   );
 }
