@@ -849,11 +849,11 @@ function App() {
                   <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('automation.linkDesc')}</p>
                   <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
                     <code className="text-sm font-bold flex-1 truncate" style={{ color: 'var(--mint)' }}>
-                      {`${window.location.protocol}//${window.location.hostname}:3001/join?u=${btoa(userEmail)}`}
+                      {`${API_URL}/join?u=${btoa(userEmail)}`}
                     </code>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.protocol}//${window.location.hostname}:3001/join?u=${btoa(userEmail)}`);
+                        navigator.clipboard.writeText(`${API_URL}/join?u=${btoa(userEmail)}`);
                         addNotification(t('toast.linkCopied'), 'success');
                       }}
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
