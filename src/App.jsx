@@ -29,7 +29,7 @@ import ScheduledMessages from './components/ScheduledMessages';
 import MercadoLivreTab from './components/MercadoLivreTab';
 import ChatbotTab from './components/ChatbotTab';
 import PromoConfig from './components/PromoConfig';
-// import SupportBubble from './components/SupportBubble';
+import SupportBubble from './components/SupportBubble';
 import AuthPage from './components/AuthPage';
 import AdminTab from './components/AdminTab';
 
@@ -245,17 +245,17 @@ function App() {
   };
 
   useEffect(() => {
-    if (!socket || !user) return;
+    if (!socket || !userEmail) return;
 
     const handleNewTicket = (ticket) => {
-      if (ticket.user_email !== user.email && (user.role === 'admin' || user.role === 'super_admin')) {
+      if (ticket.user_email !== userEmail && (userRole === 'admin' || userRole === 'super_admin')) {
         addNotification(`🆘 Novo Ticket de ${ticket.user_name}: ${ticket.category.toUpperCase()}`, 'info');
       }
     };
 
     socket.on('new_support_ticket', handleNewTicket);
     return () => socket.off('new_support_ticket', handleNewTicket);
-  }, [socket, user]);
+  }, [socket, userEmail, userRole]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -1187,10 +1187,22 @@ function App() {
         onCancel={() => setModalConfig({ ...modalConfig, isOpen: false })}
       />
 
-      <NotificationContainer notifications={notifications} onClose={removeNotification} />
-      {/* {user && socket && (
+      <div className="fixed bottom-20 lg:bottom-8 right-4 md:right-8 z-[120] flex flex-col gap-3">
+        <AnimatePresence>
+          {notifications.map(n => (
+            <Toast
+              key={n.id}
+              message={n.message}
+              type={n.type}
+              onClose={() => setNotifications(prev => prev.filter(notif => notif.id !== n.id))}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {isAuthenticated && socket && (
         <SupportBubble socket={socket} addNotification={addNotification} />
-      )} */}
+      )}
     </div>
   );
 }
