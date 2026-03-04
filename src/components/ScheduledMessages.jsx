@@ -102,7 +102,16 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
             setEditingMsg(msg);
             setText(msg.text);
             setImagePreview(msg.image);
-            setDatetime(msg.datetime);
+
+            // Se for um timestamp (número), converte para o formato local ISO esperado pelo input
+            if (typeof msg.datetime === 'number') {
+                const date = new Date(msg.datetime);
+                const localISO = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                setDatetime(localISO);
+            } else {
+                setDatetime(msg.datetime);
+            }
+
             setSelectedGroups(msg.targetGroups || []);
         } else {
             setEditingMsg(null);
@@ -156,11 +165,16 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
     const handleSave = () => {
         if (!datetime || selectedGroups.length === 0 || (!text && !imagePreview)) return;
 
+        // Converte a string do input datetime-local (que é local do browser)
+        // para um timestamp absoluto em milissegundos.
+        // Isso garante que o servidor (independente de onde estiver) mande na hora exata.
+        const absoluteTimestamp = new Date(datetime).getTime();
+
         const payload = {
             id: editingMsg ? editingMsg.id : undefined,
             text,
             image: imagePreview,
-            datetime,
+            datetime: absoluteTimestamp, // Agora enviamos o ponto exato no tempo
             targetGroups: selectedGroups
         };
 
@@ -214,7 +228,16 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
                                 </span>
                                 <div className="flex items-center gap-1 text-sm text-slate-300">
                                     <Clock size={14} />
-                                    {new Date(msg.datetime).toLocaleString(i18n.language === 'pt' ? 'pt-BR' : 'en-US')}
+                                    {(() => {
+                                        try {
+                                            const d = new Date(msg.datetime);
+                                            return isNaN(d.getTime())
+                                                ? msg.datetime
+                                                : d.toLocaleString(i18n.language === 'pt' ? 'pt-BR' : 'en-US');
+                                        } catch (e) {
+                                            return msg.datetime;
+                                        }
+                                    })()}
                                 </div>
                             </div>
                             <p className="text-white text-sm line-clamp-2">{msg.text || `(${t('scheduled.modal.imageLabel').replace(' (Opcional)', '').replace(' (Optional)', '')})`}</p>
@@ -312,13 +335,21 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-400">{t('scheduled.modal.datetimeLabel')}</label>
-                                        <input
-                                            type="datetime-local"
-                                            value={datetime}
-                                            onChange={(e) => setDatetime(e.target.value)}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-whatsapp/50 transition-colors [color-scheme:dark]"
-                                        />
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium text-slate-400">{t('scheduled.modal.datetimeLabel')}</label>
+                                            <span className="text-[10px] text-slate-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">Fuso horário local</span>
+                                        </div>
+                                        <div className="relative group">
+                                            <input
+                                                type="datetime-local"
+                                                value={datetime}
+                                                onChange={(e) => setDatetime(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-whatsapp/50 transition-colors [color-scheme:dark] appearance-none safari-date-picker"
+                                                style={{ WebkitAppearance: 'none', minHeight: '48px' }}
+                                            />
+                                            <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-hover:text-whatsapp transition-colors" size={18} />
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 italic px-1">Selecione o horário exato em que deseja disparar a campanha.</p>
                                     </div>
                                 </div>
 
