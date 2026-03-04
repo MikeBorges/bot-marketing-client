@@ -33,6 +33,7 @@ import PromoConfig from './components/PromoConfig';
 import AuthPage from './components/AuthPage';
 import AdminTab from './components/AdminTab';
 
+// Trigger Redeploy: 2026-03-04
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const socket = io(API_URL, {
   auth: {
