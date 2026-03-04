@@ -1175,29 +1175,17 @@ function App() {
             )}
           </AnimatePresence>
 
-          {/* Notifications Container - above bottom nav on mobile */}
-          <div className="fixed bottom-20 lg:bottom-8 right-4 md:right-8 z-[99] flex flex-col gap-3">
-            <AnimatePresence>
-              {notifications.map(n => (
-                <Toast
-                  key={n.id}
-                  message={n.message}
-                  type={n.type}
-                  onClose={() => setNotifications(prev => prev.filter(notif => notif.id !== n.id))}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-
-          <ConfirmationModal
-            isOpen={modalConfig.isOpen}
-            title={modalConfig.title}
-            message={modalConfig.message}
-            onConfirm={modalConfig.onConfirm}
-            onCancel={() => setModalConfig({ ...modalConfig, isOpen: false })}
-          />
         </div> {/* end max-w-6xl wrapper */}
       </main>
+
+      <ConfirmationModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={() => setModalConfig({ ...modalConfig, isOpen: false })}
+      />
+
       <NotificationContainer notifications={notifications} onClose={removeNotification} />
       {user && socket && (
         <SupportBubble socket={socket} addNotification={addNotification} />
