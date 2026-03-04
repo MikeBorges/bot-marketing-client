@@ -29,7 +29,7 @@ import ScheduledMessages from './components/ScheduledMessages';
 import MercadoLivreTab from './components/MercadoLivreTab';
 import ChatbotTab from './components/ChatbotTab';
 import PromoConfig from './components/PromoConfig';
-import SupportBubble from './components/SupportBubble';
+// import SupportBubble from './components/SupportBubble';
 import AuthPage from './components/AuthPage';
 import AdminTab from './components/AdminTab';
 
@@ -1187,9 +1187,9 @@ function App() {
       />
 
       <NotificationContainer notifications={notifications} onClose={removeNotification} />
-      {user && socket && (
+      {/* {user && socket && (
         <SupportBubble socket={socket} addNotification={addNotification} />
-      )}
+      )} */}
     </div>
   );
 }
