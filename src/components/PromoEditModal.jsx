@@ -13,7 +13,9 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
     useEffect(() => {
         if (isOpen && editData) {
             setOriginalPriceInput(editData.suggestedOriginalPrice?.toString() || '');
-            const defaultCoupon = editData.config?.coupons?.[0] || '';
+            const rawCoupon = editData.config?.coupons?.[0] || '';
+            // Extrai o code se for objeto, ou usa a string diretamente
+            const defaultCoupon = typeof rawCoupon === 'object' ? rawCoupon.code : rawCoupon;
             setSelectedCoupon(defaultCoupon);
             setImagePreview(editData.product?.image || '');
         }
@@ -131,9 +133,12 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                                     className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
                                 >
                                     <option value="">Nenhum cupom</option>
-                                    {coupons.map((cp, idx) => (
-                                        <option key={idx} value={cp}>{cp}</option>
-                                    ))}
+                                    {coupons.map((cp, idx) => {
+                                        const code = typeof cp === 'object' ? cp.code : cp;
+                                        return (
+                                            <option key={idx} value={code}>{code}</option>
+                                        );
+                                    })}
                                 </select>
                             </div>
                         )}
