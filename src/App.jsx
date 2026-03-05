@@ -831,6 +831,7 @@ function App() {
                 handleDeleteGroup={handleDeleteGroup}
                 handleCreateManualGroup={handleCreateManualGroup}
                 onRefreshViews={() => socket.emit('refresh_views')}
+                socket={socket}
               />
             )}
 

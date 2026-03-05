@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Trash2, Target, CheckCircle2, Plus, X, Download, BarChart2, Eye, TrendingUp, RefreshCw } from 'lucide-react';
@@ -16,9 +16,33 @@ const GroupsTab = ({
     stats,
     handleDeleteGroup,
     handleCreateManualGroup,
-    onRefreshViews
+    onRefreshViews,
+    socket
 }) => {
     const { t } = useTranslation();
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshDone, setRefreshDone] = useState(false);
+
+    useEffect(() => {
+        if (!socket) return;
+        const handleDone = ({ count }) => {
+            setIsRefreshing(false);
+            setRefreshDone(true);
+            setTimeout(() => setRefreshDone(false), 2500);
+            console.log(`[GroupsTab] Views atualizados: ${count} grupos`);
+        };
+        socket.on('views_refresh_done', handleDone);
+        return () => socket.off('views_refresh_done', handleDone);
+    }, [socket]);
+
+    const handleRefreshClick = useCallback(() => {
+        setIsRefreshing(true);
+        setRefreshDone(false);
+        onRefreshViews?.();
+        // Timeout de segurança: se não houver resposta em 30s, reseta
+        setTimeout(() => setIsRefreshing(false), 30000);
+    }, [onRefreshViews]);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newGroupName, setNewGroupName] = useState('');
     const [newGroupDesc, setNewGroupDesc] = useState('');
@@ -379,12 +403,16 @@ const GroupsTab = ({
                     </h3>
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={onRefreshViews}
+                            onClick={handleRefreshClick}
+                            disabled={isRefreshing}
                             title="Atualizar visualizações agora"
-                            className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 font-bold text-sm rounded-xl transition-all"
+                            className={`flex items-center gap-2 px-3 py-2 border font-bold text-sm rounded-xl transition-all ${refreshDone
+                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                    : 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-400'
+                                } disabled:opacity-60`}
                         >
-                            <RefreshCw size={14} />
-                            Atualizar Views
+                            <RefreshCw size={14} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
+                            {isRefreshing ? 'Atualizando...' : refreshDone ? '✓ Atualizado!' : 'Atualizar Views'}
                         </button>
                         <button
                             onClick={exportToCSV}
