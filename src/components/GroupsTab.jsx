@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Trash2, Target, CheckCircle2, Plus, X, Download, BarChart2, Eye, TrendingUp } from 'lucide-react';
+import { Users, Trash2, Target, CheckCircle2, Plus, X, Download, BarChart2, Eye, TrendingUp, RefreshCw } from 'lucide-react';
 
 const GroupsTab = ({
     groups,
@@ -15,7 +15,8 @@ const GroupsTab = ({
     savedConfig,
     stats,
     handleDeleteGroup,
-    handleCreateManualGroup
+    handleCreateManualGroup,
+    onRefreshViews
 }) => {
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -376,14 +377,24 @@ const GroupsTab = ({
                         <BarChart2 size={20} className="text-blue-400" />
                         {t('groups.analysis.title')}
                     </h3>
-                    <button
-                        onClick={exportToCSV}
-                        disabled={groups.length === 0}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-bold text-sm rounded-xl transition-all disabled:opacity-40"
-                    >
-                        <Download size={16} />
-                        {t('groups.analysis.exportBtn')}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onRefreshViews}
+                            title="Atualizar visualizações agora"
+                            className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 font-bold text-sm rounded-xl transition-all"
+                        >
+                            <RefreshCw size={14} />
+                            Atualizar Views
+                        </button>
+                        <button
+                            onClick={exportToCSV}
+                            disabled={groups.length === 0}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-bold text-sm rounded-xl transition-all disabled:opacity-40"
+                        >
+                            <Download size={16} />
+                            {t('groups.analysis.exportBtn')}
+                        </button>
+                    </div>
                 </div>
 
                 {/* KPIs rápidos */}
