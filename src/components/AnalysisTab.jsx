@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { MessageSquare, Users, Download, BarChart3, Calendar, Eye } from 'lucide-react';
+import { MessageSquare, Users, Download, BarChart3, Calendar, Eye, RefreshCw } from 'lucide-react';
 
 const AnalysisTab = ({
     analysisTimeRange,
@@ -11,9 +11,11 @@ const AnalysisTab = ({
     getDailyStats,
     downloadAnalysisCSV,
     groups,
-    stats
+    stats,
+    onRefresh
 }) => {
     const { t } = useTranslation();
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const filteredEvents = getFilteredEvents();
 
     // Calcula o início do bot (primeiro evento ou hoje)
@@ -69,14 +71,30 @@ const AnalysisTab = ({
                     <h2 className="text-2xl font-bold heading-lg" style={{ color: 'var(--text-primary)' }}>{t('analysis.title')}</h2>
                     <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('analysis.subtitle')}</p>
                 </div>
-                <button
-                    onClick={downloadAnalysisCSV}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0"
-                    style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: 'var(--mint)' }}
-                >
-                    <Download size={15} />
-                    {t('analysis.exportBtn')}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                    <button
+                        onClick={() => {
+                            if (isRefreshing) return;
+                            setIsRefreshing(true);
+                            onRefresh?.();
+                            setTimeout(() => setIsRefreshing(false), 3000);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                        style={{ background: 'rgba(124,111,255,0.1)', border: '1px solid rgba(124,111,255,0.2)', color: 'var(--accent)' }}
+                        title="Atualizar métricas agora"
+                    >
+                        <RefreshCw size={15} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
+                        {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+                    </button>
+                    <button
+                        onClick={downloadAnalysisCSV}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                        style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: 'var(--mint)' }}
+                    >
+                        <Download size={15} />
+                        {t('analysis.exportBtn')}
+                    </button>
+                </div>
             </header>
 
             {/* ── Filtros ───────────────────────────────────────────── */}

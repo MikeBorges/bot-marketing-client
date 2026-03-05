@@ -844,6 +844,10 @@ function App() {
                 downloadAnalysisCSV={downloadAnalysisCSV}
                 groups={groups}
                 stats={stats}
+                onRefresh={() => {
+                  socket.emit('refresh_views');
+                  socket.emit('request_data_refresh');
+                }}
               />
             )}
 
