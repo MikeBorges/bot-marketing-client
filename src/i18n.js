@@ -188,6 +188,7 @@ const resources = {
                     "groupsLabel": "Grupos Destino ({{selected}}/{{total}})",
                     "selectAll": "Selecionar Todos",
                     "deselectAll": "Desmarcar Todos",
+                    "selectAllFiltered": "Selecionar Todos os Filtrados",
                     "emptyGroups": "Nenhum grupo sincronizado. Aguarde o robô carregar.",
                     "members": "membros",
                     "cancel": "Cancelar",
@@ -516,6 +517,7 @@ const resources = {
                     "groupsLabel": "Target Groups ({{selected}}/{{total}})",
                     "selectAll": "Select All",
                     "deselectAll": "Deselect All",
+                    "selectAllFiltered": "Select All Filtered",
                     "emptyGroups": "No groups synced. Wait for the robot to load.",
                     "members": "members",
                     "cancel": "Cancel",
@@ -845,6 +847,7 @@ const resources = {
                     "groupsLabel": "Grupos Destino ({{selected}}/{{total}})",
                     "selectAll": "Seleccionar Todos",
                     "deselectAll": "Desmarcar Todos",
+                    "selectAllFiltered": "Seleccionar todos los filtrados",
                     "emptyGroups": "Ningún grupo sincronizado. Espere a que el robot cargue.",
                     "members": "miembros",
                     "cancel": "Cancelar",
@@ -986,18 +989,19 @@ const resources = {
                 "upgradeMsg": "El Plan Básico permite solo 1 cuenta activa. ¡Actualice al Plan PRO!"
             }
         }
-    };
+    }
+};
 
-    i18n
+i18n
     .use(initReactI18next)
-        .init({
-            resources,
-            lng: "pt",
-            fallbackLng: "pt",
-            interpolation: {
-                escapeValue: false
-            }
-        });
+    .init({
+        resources,
+        lng: "pt",
+        fallbackLng: "pt",
+        interpolation: {
+            escapeValue: false
+        }
+    });
 
-    export default i18n;
+export default i18n;
 

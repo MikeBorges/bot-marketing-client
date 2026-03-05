@@ -14,6 +14,7 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
     const [imagePreview, setImagePreview] = useState(null);
     const [datetime, setDatetime] = useState('');
     const [selectedGroups, setSelectedGroups] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Carregar rascunho ao montar
     useEffect(() => {
@@ -355,18 +356,66 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
 
                                 {/* Coluna Direita: Grupos */}
                                 <div className="space-y-2 flex flex-col h-full">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="text-sm font-medium text-slate-400">{t('scheduled.modal.groupsLabel', { selected: selectedGroups.length, total: groups.length })}</label>
-                                        <button onClick={handleSelectAll} className="text-xs font-bold text-whatsapp hover:text-white transition-colors">
-                                            {selectedGroups.length === groups.length ? t('scheduled.modal.deselectAll') : t('scheduled.modal.selectAll')}
-                                        </button>
+                                    <div className="space-y-3 mb-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium text-slate-400">{t('scheduled.modal.groupsLabel', { selected: selectedGroups.length, total: groups.length })}</label>
+                                            <button onClick={handleSelectAll} className="text-xs font-bold text-whatsapp hover:text-white transition-colors">
+                                                {selectedGroups.length === groups.length ? t('scheduled.modal.deselectAll') : t('scheduled.modal.selectAll')}
+                                            </button>
+                                        </div>
+
+                                        {/* Campo de Busca */}
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder={t('groups.searchPlaceholder') || "Pesquisar grupos..."}
+                                                value={searchTerm || ''}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-whatsapp/30 transition-colors"
+                                            />
+                                            {searchTerm && (
+                                                <button
+                                                    onClick={() => setSearchTerm('')}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {searchTerm && (
+                                            <button
+                                                onClick={() => {
+                                                    const filteredIds = groups
+                                                        .filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                        .map(g => g.id);
+
+                                                    setSelectedGroups(prev => {
+                                                        const newSet = new Set(prev);
+                                                        filteredIds.forEach(id => newSet.add(id));
+                                                        return Array.from(newSet);
+                                                    });
+                                                }}
+                                                className="w-full py-1.5 bg-whatsapp/10 hover:bg-whatsapp/20 border border-whatsapp/20 rounded-lg text-[10px] font-bold text-whatsapp transition-colors mt-1"
+                                            >
+                                                {t('scheduled.modal.selectAllFiltered') || "Selecionar todos os filtrados"}
+                                            </button>
+                                        )}
                                     </div>
 
-                                    <div className="flex-1 min-h-[250px] bg-white/5 border border-white/10 rounded-xl p-2 overflow-y-auto space-y-1">
+                                    <div className="flex-1 min-h-[200px] bg-white/5 border border-white/10 rounded-xl p-2 overflow-y-auto space-y-1">
                                         {groups.length === 0 ? (
                                             <div className="p-4 text-center text-slate-500 text-sm italic">{t('scheduled.modal.emptyGroups')}</div>
-                                        ) : (
-                                            groups.map(g => (
+                                        ) : (() => {
+                                            const filtered = groups.filter(g =>
+                                                !searchTerm || g.name.toLowerCase().includes(searchTerm.toLowerCase())
+                                            );
+
+                                            if (filtered.length === 0) {
+                                                return <div className="p-4 text-center text-slate-500 text-xs italic">Nenhum grupo encontrado</div>;
+                                            }
+
+                                            return filtered.map(g => (
                                                 <div
                                                     key={g.id}
                                                     onClick={() => toggleGroup(g.id)}
@@ -380,8 +429,8 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
                                                         <p className="text-[10px] text-slate-500">{g.participants} {t('scheduled.modal.members')}</p>
                                                     </div>
                                                 </div>
-                                            ))
-                                        )}
+                                            ));
+                                        })()}
                                     </div>
                                 </div>
                             </div>
