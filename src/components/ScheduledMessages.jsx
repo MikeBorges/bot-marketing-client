@@ -212,7 +212,7 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
             </header>
 
             <div className="grid grid-cols-1 gap-4">
-                {scheduledMessages.filter(m => m.status === 'pendente').length === 0 && (
+                {scheduledMessages.length === 0 && (
                     <div className="glass-card p-8 text-center border-dashed border-white/20">
                         <Calendar className="mx-auto h-12 w-12 text-slate-500 mb-4" />
                         <h3 className="text-lg font-bold text-white mb-2">{t('scheduled.empty.title')}</h3>
