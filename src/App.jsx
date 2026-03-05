@@ -110,7 +110,7 @@ function App() {
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState({});
   const [accounts, setAccounts] = useState([{ id: 'default', name: t('app.mainAccount') }]);
-  const [activeAccountId, setActiveAccountId] = useState('default');
+  const [activeAccountId, setActiveAccountId] = useState(localStorage.getItem('activeAccountId') || 'default');
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('isAuthenticated') === 'true');
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'user');
@@ -158,7 +158,10 @@ function App() {
     socket.on('qr', (url) => setQrCode(url));
     socket.on('groups', (data) => setGroups(data));
     socket.on('accounts', (data) => setAccounts(data));
-    socket.on('active_account', (id) => setActiveAccountId(id));
+    socket.on('active_account', (id) => {
+      setActiveAccountId(id);
+      localStorage.setItem('activeAccountId', id);
+    });
     socket.on('config', (config) => {
       if (config) {
         setAutoConfig(prev => ({ ...prev, ...config }));
@@ -206,6 +209,8 @@ function App() {
     setStats({});
     setQrCode(null);
     setEvents([]);
+    setActiveAccountId(id);
+    localStorage.setItem('activeAccountId', id);
     addNotification(t('toast.switchingAccount'), 'success');
     socket.emit('switch_account', { id });
   };
