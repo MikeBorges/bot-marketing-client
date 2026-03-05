@@ -593,11 +593,18 @@ function App() {
           </div>
 
           <button
-            onClick={() => i18n.changeLanguage(i18n.language === 'pt' ? 'en' : 'pt')}
+            onClick={() => {
+              const langs = ['pt', 'en', 'es'];
+              const next = langs[(langs.indexOf(i18n.language) + 1) % langs.length];
+              i18n.changeLanguage(next);
+            }}
             className="nav-item w-full"
           >
             <Globe size={15} style={{ color: 'var(--accent)' }} />
-            <span>{i18n.language === 'pt' ? 'English' : 'Português'}</span>
+            <span>
+              {i18n.language === 'pt' ? 'Português' :
+                i18n.language === 'en' ? 'English' : 'Español'}
+            </span>
           </button>
 
           <div className="flex items-center gap-2.5 px-3 py-2">

@@ -657,19 +657,347 @@ const resources = {
                 "upgradeMsg": "The Basic Plan allows only 1 active account. Upgrade to the PRO Plan!"
             }
         }
-    }
-};
-
-i18n
-    .use(initReactI18next)
-    .init({
-        resources,
-        lng: "pt", // Idioma padrão
-        fallbackLng: "pt",
-        interpolation: {
-            escapeValue: false
+    },
+    es: {
+        translation: {
+            "app": {
+                "title": "BotManager",
+                "activeAccount": "Cuenta Activa",
+                "account": "Cuenta",
+                "online": "En línea",
+                "offline": "Desconectado",
+                "mainAccount": "Cuenta Principal",
+                "dash": "Dash",
+                "subscription": "Suscripción",
+                "logout": "Salir"
+            },
+            "menu": {
+                "dashboard": "Tablero",
+                "groups": "Grupos",
+                "analysis": "Análisis",
+                "remarketing": "Remarketing",
+                "automation": "Automatización",
+                "chatbot": "Chatbot",
+                "mercadolivre": "Mercado Libre",
+                "config": "Conexión",
+                "admin": "Administración"
+            },
+            "automation": {
+                "title": "Configuración de Automatización",
+                "subtitle": "Configure los enlaces inteligentes y reglas de limpieza automática.",
+                "smartLink": "Enlace de Grupo Inteligente",
+                "linkDesc": "Este enlace redirecciona automáticamente al grupo que aún no ha alcanzado el límite de miembros.",
+                "copyBtn": "Copiar Enlace",
+                "filtersAndCleanup": "Limpieza de Inactividad del Grupo",
+                "inactivityCleanup": "Eliminar inactivos después de (días)",
+                "inactivityDesc": "Los miembros que no envíen mensajes por X días serán eliminados automáticamente.",
+                "saveBtn": "Guardar Automatización",
+                "savedBtn": "¡Automatización Guardada!",
+                "logicTitle": "Lógica del Enlace Inteligente:",
+                "logicDesc": "El enlace redirecciona al primer grupo encontrado con cupo disponible basado en el orden numérico (#1, #2...)."
+            },
+            "dashboard": {
+                "welcome": "Bienvenido",
+                "subtitle": "Gestione su automatización inteligente.",
+                "totalGroups": "Total Grupos",
+                "synced": "Sincronizados",
+                "totalMembers": "Total Miembros",
+                "inAllGroups": "En todos los grupos",
+                "status": "Estado",
+                "active": "Activo",
+                "off": "Off",
+                "botEngine": "Motor del Bot",
+                "engineStatus": "Estado del Motor",
+                "operational": "Operativo",
+                "disconnected": "Desconectado",
+                "engineDesc1": "Para gestionar la conexión Web de WhatsApp o escanear un nuevo código QR, vaya a la pestaña de ",
+                "engineDesc2": "Conexión",
+                "recentGroups": "Grupos Recientes",
+                "members": "Miembros",
+                "noGroups": "Ningún grupo sincronizado."
+            },
+            "groups": {
+                "title": "Sus Grupos",
+                "subtitle": "Total de {{count}} grupos detectados.",
+                "searchPlaceholder": "Buscar grupos...",
+                "createBtn": "Crear Grupo Inteligente",
+                "newBadge": "{{count}} nuevas",
+                "botGroup": "Robot",
+                "personalGroup": "Personal",
+                "critical": "Crítico",
+                "monitoring": "Monitoreando",
+                "engagement": "Compromiso",
+                "deleteTooltip": "Salir y Eliminar Grupo",
+                "empty": "Conecte WhatsApp para sincronizar sus grupos.",
+                "modal": {
+                    "title": "Crear Grupo Inteligente",
+                    "subtitle": "Cree un grupo ahora o simplemente configure el estándar para el robot.",
+                    "immediateTitle": "Creación Inmediata",
+                    "nameLabel": "Nombre del Nuevo Grupo",
+                    "namePlaceholder": "Ej: Grupo Black Friday 01",
+                    "descLabel": "Descripción del Grupo (Opcional)",
+                    "descPlaceholder": "Ej: Reglas: Sin cadenas, solo promociones.",
+                    "createNowBtn": "Crear Grupo Ahora",
+                    "baseLogicTitle": "Lógica Base para el Robot",
+                    "baseNameLabel": "Nombre Base de los Grupos",
+                    "baseNamePlaceholder": "Ej: Ofertas VIP",
+                    "baseNameDesc": "El robot creará: {{name}} #1...",
+                    "thresholdLabel": "Límite para Nuevo Ciclo",
+                    "thresholdDesc": "Estándar: 990 (Límite: 1024)",
+                    "antiSpamTitle": "Mensaje por Privado",
+                    "antiSpamDesc": "Protege grupos y permite el envío de mensajes por privado, ambos simultáneos.",
+                    "welcomeLabel": "Mensaje de Bienvenida (Privado)",
+                    "welcomePlaceholder": "Ej: ¡Hola! Bienvenido a nuestro grupo...",
+                    "welcomeDesc": "El mensaje se enviará al privado del nuevo miembro.",
+                    "antiSpamOffDesc": "Active esta clave para eliminar enlaces de los grupos y habilitar el envío de mensajes por privado.",
+                    "changeImageBtn": "Cambiar Imagen Oficial",
+                    "imageDesc": "Aparecerá automáticamente en los grupos nuevos.",
+                    "saveBtn": "Guardar y Cerrar",
+                    "savedBtn": "¡Guardado!"
+                },
+                "analysis": {
+                    "title": "Análisis de Grupos",
+                    "exportBtn": "Exportar Excel (.csv)",
+                    "totalMembers": "Total Miembros",
+                    "totalViews": "Total Vistas",
+                    "avgViews": "Promedio Vistas",
+                    "colGroup": "Grupo",
+                    "colMembers": "Miembros",
+                    "colCapacity": "Capacidad",
+                    "colViews": "Vistas",
+                    "colViewsPct": "Vistas %",
+                    "colCreated": "Creación",
+                    "totalRow": "TOTAL / PROMEDIO",
+                    "noData": "Ningún grupo disponible para análisis."
+                }
+            },
+            "analysis": {
+                "title": "Análisis de Rendimiento",
+                "subtitle": "Flujo de miembros y compromiso consolidado.",
+                "exportBtn": "Excel (Período)",
+                "filterLabel": "Filtrar por:",
+                "timeRange": {
+                    "today": "Hoy",
+                    "yesterday": "Últimas 48h (Ayer)",
+                    "days": "Últimos {{count}} Días",
+                    "week": "1 Semana",
+                    "weeks": "{{count}} Semanas",
+                    "month": "30 Días",
+                    "months": "Meses",
+                    "monthNames": {
+                        "0": "Enero",
+                        "1": "Febrero",
+                        "2": "Marzo",
+                        "3": "Abril",
+                        "4": "Mayo",
+                        "5": "Junio",
+                        "6": "Julio",
+                        "7": "Agosto",
+                        "8": "Septiembre",
+                        "9": "Octubre",
+                        "10": "Noviembre",
+                        "11": "Diciembre"
+                    }
+                },
+                "stats": {
+                    "entries": "Entradas",
+                    "exits": "Salidas",
+                    "balance": "Saldo",
+                    "views": "Vistas"
+                },
+                "growthTitle": "Crecimiento a lo Largo del Tiempo",
+                "emptyChart": "Sin datos para mostrar en este momento.",
+                "metricsTitle": "Métricas por Tipo de Grupo",
+                "botGroups": "Grupos del Robot",
+                "personalGroups": "Grupos Personales",
+                "totalGroups": "Total de Grupos:",
+                "totalMembers": "Total de Miembros:",
+                "activityLogTitle": "Log de Últimas Actividades",
+                "activityJoin": "Nuevo miembro en",
+                "activityLeave": "Miembro salió de",
+                "emptyActivity": "Ninguna actividad registrada aún."
+            },
+            "scheduled": {
+                "title": "Campañas Programadas",
+                "subtitle": "Programe envíos de mensajes con imagen para grupos específicos.",
+                "newBtn": "Nueva Campaña",
+                "empty": {
+                    "title": "Ninguna campaña pendiente",
+                    "desc": "Haga clic en \"Nueva Campaña\" para programar su primer envío."
+                },
+                "status": {
+                    "pendente": "Pendiente",
+                    "enviando": "Enviando",
+                    "concluido": "Completado"
+                },
+                "editBtn": "Editar",
+                "modal": {
+                    "titleAdd": "Programar Nueva Campaña",
+                    "titleEdit": "Editar Campaña",
+                    "textLabel": "Texto del Mensaje",
+                    "textPlaceholder": "Ej: Oferta imperdible ocurriendo ahora...",
+                    "imageLabel": "Adjuntar Imagen (Opcional)",
+                    "imageLabelHint": "(arrastre, pegue con Ctrl+V o haga clic)",
+                    "imagePlaceholder": "Haga clic, arrastre o pegue (Ctrl+V)",
+                    "imageDragging": "Suelte para añadir",
+                    "imageRemove": "Eliminar Imagen",
+                    "datetimeLabel": "Fecha y Hora del Envío",
+                    "groupsLabel": "Grupos Destino ({{selected}}/{{total}})",
+                    "selectAll": "Seleccionar Todos",
+                    "deselectAll": "Desmarcar Todos",
+                    "emptyGroups": "Ningún grupo sincronizado. Espere a que el robot cargue.",
+                    "members": "miembros",
+                    "cancel": "Cancelar",
+                    "updateBtn": "Actualizar Programación",
+                    "scheduleBtn": "Programar Envío"
+                }
+            },
+            "settings": {
+                "title": "Configuración y Conexión",
+                "subtitle": "Gestione la conexión de su cuenta de WhatsApp actual.",
+                "connection": "Conexión WhatsApp",
+                "connected": "Conectado",
+                "disconnectBtn": "Desconectar",
+                "scanDesc": "Escanee este código con WhatsApp en su teléfono.",
+                "waiting": "Esperando al servidor..."
+            },
+            "accounts": {
+                "select": "Seleccionar Cuenta",
+                "addBtn": "Añadir cuenta",
+                "modal": {
+                    "title": "Nueva Cuenta",
+                    "desc": "Asigne un nombre para identificar esta cuenta.",
+                    "placeholder": "Ej: Cuenta Principal, Oferta 2...",
+                    "cancel": "Cancelar",
+                    "createBtn": "Crear Cuenta"
+                }
+            },
+            "remarketing": {
+                "title": "Leads Remarketing",
+                "subtitle": "Total de {{count}} personas salidas.",
+                "exportBtn": "Exportar Excel (CSV)",
+                "headers": {
+                    "date": "Fecha",
+                    "name": "Nombre",
+                    "number": "Número",
+                    "originGroup": "Grupo Origen"
+                },
+                "empty": "Esperando captura de nuevos leads...",
+                "bulkBtn": "Enviar a {{count}} seleccionados",
+                "bulkModalTitle": "Enviar Mensaje masivo",
+                "bulkModalDesc": "El mensaje se enviará a {{count}} leads seleccionados.",
+                "bulkSendBtn": "Enviar a {{count}} leads",
+                "strategyTitle": "Estrategia de Remarketing:",
+                "strategyDesc": "Estos usuarios ya han mostrado interés en su nicho. Use la lista exportada para crear públicos personalizados o campañas de recuperación por privado."
+            },
+            "toast": {
+                "switchingAccount": "Cambiando de cuenta...",
+                "accountCreated": "¡Cuenta \"{{name}}\" creada!",
+                "configSaved": "¡Configuración guardada con éxito!",
+                "nameRequired": "El nombre del grupo es obligatorio.",
+                "requestSent": "¡Solicitud enviada!",
+                "imageSize": "La imagen debe tener como máximo 2MB",
+                "disconnecting": "Desconectando...",
+                "campaignScheduled": "¡Campaña programada con éxito!",
+                "campaignUpdated": "¡Campaña actualizada!",
+                "campaignRemoved": "¡Campaña eliminada!",
+                "noLeadsExport": "No hay leads para exportar",
+                "reportExported": "¡Informe exportado con éxito!",
+                "noAnalysisData": "No hay datos de análisis para este período",
+                "analysisExported": "¡Análisis exportado con éxito!",
+                "linkCopied": "¡Enlace copiado!",
+                "messageSent": "¡Mensaje enviado con éxito!"
+            },
+            "modal": {
+                "cancel": "Cancelar",
+                "confirm": "Confirmar",
+                "removeAccountTitle": "Eliminar Cuenta",
+                "removeAccountDesc": "¿Está seguro? La sesión de esta cuenta se borrará permanentemente.",
+                "disconnectTitle": "Desconectar WhatsApp",
+                "disconnectDesc": "¿Está seguro de que desea desconectar? Deberá escanear el código QR nuevamente para volver.",
+                "deleteGroupTitle": "Eliminar Grupo",
+                "deleteGroupDesc": "¿Realmente desea salir y eliminar el grupo \"{{name}}\"? Esta acción no se puede deshacer."
+            },
+            "chatbot": {
+                "title": "Chatbot",
+                "subtitle": "Envíe comandos directamente al bot y vea las respuestas aquí.",
+                "connected": "Bot Conectado",
+                "disconnected": "Bot Desconectado",
+                "clearBtn": "Limpiar",
+                "clearedMsg": "¡Conversación limpia! Escriba un comando para continuar.",
+                "placeholder": "Escriba un comando... (Enter para enviar)",
+                "infoTitle": "Cómo usar:",
+                "infoDesc": "Los comandos enviados aquí son procesados por el bot y la respuesta aparece en esta ventana.",
+                "shortcutsHint": "← haga clic para usar"
+            },
+            "mercadolivre": {
+                "title": "Mercado Libre",
+                "subtitle": "Análisis de ventas, devoluciones y cobros.",
+                "connected": "Cuenta Vinculada",
+                "disconnected": "No Vinculado",
+                "credentialsTitle": "Credenciales de Acceso",
+                "tokenLink": "¿Cómo obtener mi Access Token?",
+                "saveBtn": "Guardar",
+                "filterTitle": "Filtrar por Período",
+                "fromLabel": "De:",
+                "toLabel": "Hasta:",
+                "fetchBtn": "Buscar Datos",
+                "loading": "Cargando...",
+                "kpi": {
+                    "sales": "Ventas",
+                    "salesDesc": "pedidos en el período",
+                    "revenue": "Total Vendido",
+                    "revenueDesc": "valor bruto total",
+                    "pending": "Por Recibir",
+                    "pendingDesc": "pagados / en proceso",
+                    "returns": "Devoluciones",
+                    "returnsDesc": "reclamaciones abiertas"
+                },
+                "charts": {
+                    "revenueTitle": "Ingresos por Día (R$)",
+                    "countTitle": "Ventas por Día (Cantidad)",
+                    "statusTitle": "Estado de los Pedidos",
+                    "noData": "Sin datos en el período."
+                },
+                "ordersTitle": "Últimas Ventas",
+                "claimsTitle": "Reclamaciones / Devoluciones",
+                "emptyTitle": "¿Listo para analizar sus ventas?",
+                "emptyDesc": "Configure su Access Token, elija el período y haga clic en Buscar Datos.",
+                "status": {
+                    "paid": "Pagado",
+                    "payment_in_process": "En Proceso",
+                    "cancelled": "Cancelado"
+                }
+            },
+            "admin": {
+                "title": "Administración",
+                "subtitle": "Gestión de Cuentas",
+                "desc": "Monitoree las cuentas iniciadas y gestione permisos y planes.",
+                "createBtn": "Crear Nuevo Usuario",
+                "modalTitle": "Crear Nuevo Usuario",
+                "nameLabel": "Nombre Completo",
+                "emailLabel": "E-mail",
+                "passwordLabel": "Contraseña Inicial",
+                "planLabel": "Plan Inicial",
+                "cancel": "Cancelar",
+                "submit": "Crear Usuario",
+                "creating": "Creando...",
+                "loading": "Cargando usuarios...",
+                "upgradeMsg": "El Plan Básico permite solo 1 cuenta activa. ¡Actualice al Plan PRO!"
+            }
         }
-    });
+    };
 
-export default i18n;
+    i18n
+    .use(initReactI18next)
+        .init({
+            resources,
+            lng: "pt",
+            fallbackLng: "pt",
+            interpolation: {
+                escapeValue: false
+            }
+        });
+
+    export default i18n;
 
