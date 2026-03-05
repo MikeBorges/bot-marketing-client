@@ -407,8 +407,8 @@ const GroupsTab = ({
                             disabled={isRefreshing}
                             title="Atualizar visualizações agora"
                             className={`flex items-center gap-2 px-3 py-2 border font-bold text-sm rounded-xl transition-all ${refreshDone
-                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                    : 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-400'
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                : 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-400'
                                 } disabled:opacity-60`}
                         >
                             <RefreshCw size={14} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
@@ -493,7 +493,7 @@ const GroupsTab = ({
                                                         {g.name.substring(0, 1)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-white font-medium text-sm truncate max-w-[160px]">{g.name}</p>
+                                                        <p className="text-white font-medium text-sm">{g.name}</p>
                                                         {g.isBotGroup && <span className="text-[9px] text-whatsapp font-bold uppercase">BOT</span>}
                                                     </div>
                                                 </div>
