@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Plus, Trash2, Calendar, Users, Image as ImageIcon, Send, X, CheckSquare, Eye, Clipboard } from 'lucide-react';
+import { Clock, Plus, Trash2, Calendar, Users, Image as ImageIcon, Send, X, CheckSquare, Eye, Clipboard, Search } from 'lucide-react';
 
-const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete }) => {
+const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete, socket }) => {
     const { t, i18n } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMsg, setEditingMsg] = useState(null);
@@ -15,6 +15,9 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
     const [datetime, setDatetime] = useState('');
     const [selectedGroups, setSelectedGroups] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [listSearchTerm, setListSearchTerm] = useState('');
+    const [listDateFilter, setListDateFilter] = useState('');
+    const [selectedMsgs, setSelectedMsgs] = useState(new Set());
 
     // Carregar rascunho ao montar
     useEffect(() => {
@@ -193,6 +196,39 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
         setIsModalOpen(false);
     };
 
+    const handleDeleteSelected = () => {
+        const ids = Array.from(selectedMsgs);
+        if (ids.length === 0) return;
+
+        if (window.confirm(`Tem certeza que deseja excluir ${ids.length} campanhas selecionadas?`)) {
+            socket.emit('delete_selected_scheduled', { ids });
+            setSelectedMsgs(new Set());
+        }
+    };
+
+    const toggleMsgSelection = (id) => {
+        setSelectedMsgs(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const filteredMessages = scheduledMessages.filter(msg => {
+        const matchesText = !listSearchTerm || (msg.text || '').toLowerCase().includes(listSearchTerm.toLowerCase());
+        const matchesDate = !listDateFilter || (new Date(msg.datetime).toLocaleDateString() === new Date(listDateFilter + 'T12:00:00').toLocaleDateString());
+        return matchesText && matchesDate;
+    });
+
+    const toggleSelectAllList = () => {
+        if (selectedMsgs.size === filteredMessages.length) {
+            setSelectedMsgs(new Set());
+        } else {
+            setSelectedMsgs(new Set(filteredMessages.map(m => m.id)));
+        }
+    };
+
     return (
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -211,42 +247,97 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
                 </button>
             </header>
 
+            {/* Filtros e Ações em Massa */}
+            <div className="flex flex-col md:flex-row gap-4 items-center bg-white/5 p-4 rounded-2xl border border-white/10">
+                <div className="flex-1 flex flex-col md:flex-row gap-4 w-full">
+                    <div className="relative flex-1">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input
+                            type="text"
+                            placeholder="Pesquisar nas campanhas..."
+                            value={listSearchTerm}
+                            onChange={(e) => setListSearchTerm(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50"
+                        />
+                    </div>
+                    <div className="relative">
+                        <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input
+                            type="date"
+                            value={listDateFilter}
+                            onChange={(e) => setListDateFilter(e.target.value)}
+                            className="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 [color-scheme:dark]"
+                        />
+                        {listDateFilter && (
+                            <button onClick={() => setListDateFilter('')} className="ml-2 text-xs text-slate-500 hover:text-white">Limpar</button>
+                        )}
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                    {selectedMsgs.size > 0 && (
+                        <button
+                            onClick={handleDeleteSelected}
+                            className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-bold border border-red-500/20 transition-all"
+                        >
+                            <Trash2 size={16} />
+                            Excluir Selecionados ({selectedMsgs.size})
+                        </button>
+                    )}
+                    <button
+                        onClick={toggleSelectAllList}
+                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 px-4 py-2 rounded-xl text-sm font-medium border border-white/10 transition-all"
+                    >
+                        <CheckSquare size={16} />
+                        {selectedMsgs.size === filteredMessages.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                    </button>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-4">
-                {scheduledMessages.length === 0 && (
+                {filteredMessages.length === 0 && (
                     <div className="glass-card p-8 text-center border-dashed border-white/20">
                         <Calendar className="mx-auto h-12 w-12 text-slate-500 mb-4" />
-                        <h3 className="text-lg font-bold text-white mb-2">{t('scheduled.empty.title')}</h3>
-                        <p className="text-slate-400">{t('scheduled.empty.desc')}</p>
+                        <h3 className="text-lg font-bold text-white mb-2">Nenhuma campanha encontrada</h3>
+                        <p className="text-slate-400">Tente ajustar seus filtros ou crie uma nova campanha.</p>
                     </div>
                 )}
 
-                {scheduledMessages.slice().reverse().map(msg => (
-                    <div key={msg.id} className="glass-card flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${msg.status === 'concluido' ? 'bg-emerald-500/20 text-emerald-400' : msg.status === 'enviando' ? 'bg-blue-500/20 text-blue-400' : 'bg-whatsapp/20 text-whatsapp'}`}>
-                                    {t(`scheduled.status.${msg.status}`)}
-                                </span>
-                                <div className="flex items-center gap-1 text-sm text-slate-300">
-                                    <Clock size={14} />
-                                    {(() => {
-                                        try {
-                                            const d = new Date(msg.datetime);
-                                            return isNaN(d.getTime())
-                                                ? msg.datetime
-                                                : d.toLocaleString(i18n.language === 'pt' ? 'pt-BR' : 'en-US');
-                                        } catch (e) {
-                                            return msg.datetime;
-                                        }
-                                    })()}
+                {filteredMessages.slice().reverse().map(msg => (
+                    <div
+                        key={msg.id}
+                        onClick={() => toggleMsgSelection(msg.id)}
+                        className={`glass-card flex flex-col md:flex-row gap-4 justify-between items-start md:items-center cursor-pointer border-2 transition-all ${selectedMsgs.has(msg.id) ? 'border-blue-500/50 bg-blue-500/5' : 'border-transparent'}`}
+                    >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${selectedMsgs.has(msg.id) ? 'bg-blue-500 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'border-white/20'}`} onClick={(e) => { e.stopPropagation(); toggleMsgSelection(msg.id); }}>
+                                {selectedMsgs.has(msg.id) ? <CheckSquare size={14} className="text-white" /> : null}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${msg.status === 'concluido' ? 'bg-emerald-500/20 text-emerald-400' : msg.status === 'enviando' ? 'bg-blue-500/20 text-blue-400' : 'bg-whatsapp/20 text-whatsapp'}`}>
+                                        {t(`scheduled.status.${msg.status}`)}
+                                    </span>
+                                    <div className="flex items-center gap-1 text-sm text-slate-300">
+                                        <Clock size={14} />
+                                        {(() => {
+                                            try {
+                                                const d = new Date(msg.datetime);
+                                                return isNaN(d.getTime())
+                                                    ? msg.datetime
+                                                    : d.toLocaleString(i18n.language === 'pt' ? 'pt-BR' : 'en-US');
+                                            } catch (e) {
+                                                return msg.datetime;
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+                                <p className="text-white text-sm line-clamp-2">{msg.text || `(${t('scheduled.modal.imageLabel').replace(' (Opcional)', '').replace(' (Optional)', '')})`}</p>
+                                <div className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                                    <Users size={12} /> {msg.targetGroups?.length || 0} {t('menu.groups').toLowerCase()} {t('dashboard.synced').toLowerCase()}
                                 </div>
                             </div>
-                            <p className="text-white text-sm line-clamp-2">{msg.text || `(${t('scheduled.modal.imageLabel').replace(' (Opcional)', '').replace(' (Optional)', '')})`}</p>
-                            <div className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                                <Users size={12} /> {msg.targetGroups?.length || 0} {t('menu.groups').toLowerCase()} {t('dashboard.synced').toLowerCase()}
-                            </div>
                         </div>
-                        <div className="flex gap-2 shrink-0">
+                        <div className="flex gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                             {msg.status === 'pendente' && (
                                 <button onClick={() => handleOpenModal(msg)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-sm text-white font-medium transition-colors">
                                     {t('scheduled.editBtn')}
@@ -456,7 +547,7 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete 
             </AnimatePresence>
 
             {/* View Modal */}
-            <AnimatePresence>
+            < AnimatePresence >
                 {viewingMsg && (
                     <div className="fixed inset-0 z-[160] flex items-center justify-center p-4">
                         <motion.div

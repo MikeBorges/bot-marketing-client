@@ -398,6 +398,40 @@ function App() {
     addNotification(t('toast.reportExported'), 'success');
   };
 
+  const handleDeleteLead = (id) => {
+    socket.emit('delete_lead', { id });
+    addNotification('Lead removido!', 'success');
+  };
+
+  const handleDeleteSelectedLeads = () => {
+    const ids = leads.filter(l => selectedLeads.has(l.number)).map(l => l.id);
+    if (ids.length === 0) return;
+
+    setModalConfig({
+      isOpen: true,
+      title: 'Excluir Selecionados',
+      message: `Tem certeza que deseja excluir ${ids.length} leads selecionados?`,
+      onConfirm: () => {
+        socket.emit('delete_selected_leads', { ids });
+        setSelectedLeads(new Set());
+        addNotification('Leads selecionados removidos!', 'success');
+      }
+    });
+  };
+
+  const handleClearAllLeads = () => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Limpar Tudo',
+      message: 'Tem certeza que deseja excluir TODOS os leads desta conta? Esta ação não pode ser desfeita.',
+      onConfirm: () => {
+        socket.emit('clear_all_leads');
+        setSelectedLeads(new Set());
+        addNotification('Lista de leads limpa com sucesso!', 'success');
+      }
+    });
+  };
+
   const getFilteredEvents = () => {
     return events.filter(e => {
       if (analysisTimeRange && typeof analysisTimeRange === 'object' && analysisTimeRange.type === 'custom') {
@@ -849,6 +883,7 @@ function App() {
                   socket.emit('refresh_views');
                   socket.emit('request_data_refresh');
                 }}
+                config={autoConfig}
               />
             )}
 
@@ -962,6 +997,7 @@ function App() {
                   onAdd={handleAddScheduled}
                   onEdit={handleEditScheduled}
                   onDelete={handleDeleteScheduled}
+                  socket={socket}
                 />
 
                 {/* ── Nota de Lógica ── */}
@@ -998,6 +1034,22 @@ function App() {
                         Enviar para {selectedLeads.size}
                       </button>
                     )}
+                    {selectedLeads.size > 0 && (
+                      <button
+                        onClick={handleDeleteSelectedLeads}
+                        className="flex items-center gap-2 font-bold px-4 py-2 rounded-xl transition-all text-sm bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                      >
+                        <Trash2 size={15} />
+                        Excluir Selecionados ({selectedLeads.size})
+                      </button>
+                    )}
+                    <button
+                      onClick={handleClearAllLeads}
+                      className="flex items-center gap-2 font-semibold px-4 py-2 rounded-xl transition-all text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/5 transition-colors"
+                    >
+                      <Trash2 size={15} />
+                      Limpar Tudo
+                    </button>
                     <button
                       onClick={downloadLeads}
                       className="flex items-center gap-2 font-semibold px-4 py-2 rounded-xl transition-all text-sm btn-ghost"
@@ -1049,13 +1101,22 @@ function App() {
                             <td className="px-6 py-4 text-sm text-slate-300">{lead.number}</td>
                             <td className="px-6 py-4 text-sm text-slate-400 italic">{lead.groupName}</td>
                             <td className="px-6 py-4 text-sm text-right" onClick={e => e.stopPropagation()}>
-                              <button
-                                onClick={() => setRemarketingModal({ isOpen: true, lead, text: '' })}
-                                className="px-3 py-1.5 bg-whatsapp/10 hover:bg-whatsapp/20 text-whatsapp rounded-lg text-xs font-bold flex items-center gap-1.5 ml-auto transition-colors"
-                              >
-                                <MessageSquare size={14} />
-                                Enviar
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setRemarketingModal({ isOpen: true, lead, text: '' })}
+                                  className="px-3 py-1.5 bg-whatsapp/10 hover:bg-whatsapp/20 text-whatsapp rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
+                                >
+                                  <MessageSquare size={14} />
+                                  Enviar
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteLead(lead.id)}
+                                  className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                  title="Excluir Lead"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}

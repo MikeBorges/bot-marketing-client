@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Trash2, Target, CheckCircle2, Plus, X, Download, BarChart2, Eye, TrendingUp, RefreshCw } from 'lucide-react';
+import { Users, Trash2, Target, CheckCircle2, Plus, X, Download, BarChart2, Eye, TrendingUp, RefreshCw, Search } from 'lucide-react';
 
 const GroupsTab = ({
     groups,
@@ -48,6 +48,7 @@ const GroupsTab = ({
     const [newGroupDesc, setNewGroupDesc] = useState('');
     const [newGroupIndex, setNewGroupIndex] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: 'participants', direction: 'desc' });
+    const [analysisTerm, setAnalysisTerm] = useState('');
 
     const finalGroupName = () => {
         const name = newGroupName.trim();
@@ -78,7 +79,12 @@ const GroupsTab = ({
         return { ...g, views, viewsPct, createdAt };
     });
 
-    const sortedData = [...analysisData].sort((a, b) => {
+    // Filtra pela barra de pesquisa da análise (não afeta os KPIs)
+    const filteredAnalysis = analysisTerm.trim()
+        ? analysisData.filter(g => g.name.toLowerCase().includes(analysisTerm.toLowerCase()))
+        : analysisData;
+
+    const sortedData = [...filteredAnalysis].sort((a, b) => {
         if (!sortConfig.key) return 0;
         let valA = a[sortConfig.key];
         let valB = b[sortConfig.key];
@@ -100,6 +106,33 @@ const GroupsTab = ({
         setSortConfig({ key, direction });
     };
 
+    const toggleMonitoring = (groupId) => {
+        const current = autoConfig.monitoredGroups || [];
+        let next;
+        if (current.includes(groupId)) {
+            next = current.filter(id => id !== groupId);
+        } else {
+            next = [...current, groupId];
+        }
+        const nextConfig = { ...autoConfig, monitoredGroups: next };
+        setAutoConfig(nextConfig);
+        // Persiste imediatamente para não perder a seleção
+        socket.emit('update_config', { ...nextConfig, imageData: imagePreview });
+    };
+
+    const toggleAllMonitoring = () => {
+        const current = autoConfig.monitoredGroups || [];
+        let next;
+        if (current.length === groups.length) {
+            next = [];
+        } else {
+            next = groups.map(g => g.id);
+        }
+        const nextConfig = { ...autoConfig, monitoredGroups: next };
+        setAutoConfig(nextConfig);
+        socket.emit('update_config', { ...nextConfig, imageData: imagePreview });
+    };
+
     const SortIcon = ({ column }) => {
         if (sortConfig.key !== column) return <TrendingUp size={10} className="ml-1 opacity-20" />;
         return sortConfig.direction === 'desc'
@@ -109,9 +142,8 @@ const GroupsTab = ({
 
     const totalMembers = analysisData.reduce((a, g) => a + g.participants, 0);
     const totalViews = analysisData.reduce((a, g) => a + g.views, 0);
-    const avgViewsPct = analysisData.length > 0
-        ? analysisData.reduce((a, g) => a + g.viewsPct, 0) / analysisData.length
-        : 0;
+    // Média ponderada: total de views / total de membros (correto e consistente com a coluna)
+    const avgViewsPct = totalMembers > 0 ? (totalViews / totalMembers) * 100 : 0;
 
     // Base de capacidade: usa threshold configurado se for maior que o maior grupo,
     // senão usa o maior número de membros como 100% (evita barras com 2850%)
@@ -441,11 +473,47 @@ const GroupsTab = ({
                     </div>
                 </div>
 
+                {/* Header da tabela com filtro */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <p className="text-xs text-slate-500">
+                        {analysisTerm ? `${filteredAnalysis.length} de ${analysisData.length} grupos` : `${analysisData.length} grupos`}
+                    </p>
+                    <div className="relative w-full sm:w-64">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                        <input
+                            type="text"
+                            placeholder="Filtrar por nome..."
+                            value={analysisTerm}
+                            onChange={e => setAnalysisTerm(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-8 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors"
+                        />
+                        {analysisTerm && (
+                            <button
+                                onClick={() => setAnalysisTerm('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                            >
+                                <X size={13} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
                 {/* Tabela */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-white/5">
+                                <th
+                                    className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                    onClick={toggleAllMonitoring}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${(autoConfig.monitoredGroups || []).length === groups.length ? 'bg-whatsapp border-whatsapp' : 'border-white/20'}`}>
+                                            {(autoConfig.monitoredGroups || []).length === groups.length && <CheckCircle2 size={12} className="text-black" />}
+                                        </div>
+                                        Monitorar
+                                    </div>
+                                </th>
                                 <th
                                     className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
                                     onClick={() => requestSort('name')}
@@ -486,7 +554,14 @@ const GroupsTab = ({
                                         ? Math.min(100, (g.participants / autoConfig.threshold) * 100)
                                         : Math.min(100, (g.participants / capacityBase) * 100);
                                     return (
-                                        <tr key={g.id} className="hover:bg-white/5 transition-colors">
+                                        <tr key={g.id} className={`hover:bg-white/5 transition-colors ${!(autoConfig.monitoredGroups || []).includes(g.id) ? 'opacity-50' : ''}`}>
+                                            <td className="px-4 py-3" onClick={() => toggleMonitoring(g.id)}>
+                                                <div className="flex items-center justify-center">
+                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${(autoConfig.monitoredGroups || []).includes(g.id) ? 'bg-whatsapp border-whatsapp shadow-[0_0_10px_rgba(74,222,128,0.3)]' : 'border-white/20'}`}>
+                                                        {(autoConfig.monitoredGroups || []).includes(g.id) && <CheckCircle2 size={14} className="text-black" />}
+                                                    </div>
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-7 h-7 rounded-lg bg-whatsapp/10 text-whatsapp text-xs font-bold flex items-center justify-center uppercase shrink-0">
@@ -538,6 +613,7 @@ const GroupsTab = ({
                             {/* Linha de totais */}
                             {analysisData.length > 0 && (
                                 <tr className="border-t-2 border-white/10 bg-white/5">
+                                    <td className="px-4 py-3" />
                                     <td className="px-4 py-3 text-xs font-bold text-slate-400 uppercase">{t('groups.analysis.totalRow')}</td>
                                     <td className="px-4 py-3 text-right font-bold text-white">{totalMembers.toLocaleString('pt-BR')}</td>
                                     <td className="px-4 py-3 hidden md:table-cell" />
@@ -582,9 +658,13 @@ const GroupsTab = ({
                         </div>
                         <div className="mt-auto flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
-                                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${group.participants >= autoConfig.threshold ? 'bg-red-500 animate-pulse' : 'bg-whatsapp/40'}`} />
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleMonitoring(group.id); }}
+                                    className={`w-4 h-4 rounded-full flex-shrink-0 border transition-all ${(autoConfig.monitoredGroups || []).includes(group.id) ? 'bg-whatsapp border-whatsapp' : 'bg-slate-700 border-white/20'}`}
+                                    title={(autoConfig.monitoredGroups || []).includes(group.id) ? "Monitoramento Ativo" : "Monitoramento Inativo"}
+                                />
                                 <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase truncate">
-                                    {group.isBotGroup ? t('groups.botGroup') : t('groups.personalGroup')} - {group.participants >= autoConfig.threshold ? t('groups.critical') : t('groups.monitoring')}
+                                    {(autoConfig.monitoredGroups || []).includes(group.id) ? 'Monitorando' : 'Ignorado'}
                                 </span>
                             </div>
                             <div className="flex flex-col items-end gap-1 flex-shrink-0">

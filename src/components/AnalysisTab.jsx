@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { MessageSquare, Users, Download, BarChart3, Calendar, Eye, RefreshCw } from 'lucide-react';
@@ -12,11 +12,34 @@ const AnalysisTab = ({
     downloadAnalysisCSV,
     groups,
     stats,
-    onRefresh
+    onRefresh,
+    config
 }) => {
     const { t } = useTranslation();
+    const monitoredIds = config?.monitoredGroups || [];
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const filteredEvents = getFilteredEvents();
+
+    // Filtra localmente para reagir à mudança de analysisTimeRange
+    const filteredEvents = useMemo(() => {
+        return events.filter(e => {
+            // Filtro por Grupo (Monitoramento Seletivo)
+            if (monitoredIds.length > 0 && !monitoredIds.includes(e.groupId)) return false;
+
+            if (analysisTimeRange && typeof analysisTimeRange === 'object' && analysisTimeRange.type === 'custom') {
+                return e.timestamp >= analysisTimeRange.from && e.timestamp <= analysisTimeRange.to;
+            } else if (typeof analysisTimeRange === 'number') {
+                return e.timestamp > Date.now() - analysisTimeRange;
+            } else if (typeof analysisTimeRange === 'string' && analysisTimeRange.startsWith('month-')) {
+                const parts = analysisTimeRange.split('-');
+                const year = parseInt(parts[1]);
+                const month = parseInt(parts[2]);
+                const start = new Date(year, month, 1).getTime();
+                const end = new Date(year, month + 1, 1).getTime();
+                return e.timestamp >= start && e.timestamp < end;
+            }
+            return true;
+        });
+    }, [events, analysisTimeRange]);
 
     // Calcula o início do bot (primeiro evento ou hoje)
     const firstEventTimestamp = events.length > 0
@@ -45,11 +68,29 @@ const AnalysisTab = ({
         setAnalysisTimeRange({ type: 'custom', from, to });
     };
 
-    const dailyStats = getDailyStats();
+    const dailyStats = useMemo(() => {
+        const statsByDay = {};
+        const todayLocalStr = new Date().toLocaleDateString();
+        statsByDay[todayLocalStr] = { date: 'Hoje', join: 0, leave: 0, growth: 0, timestamp: Date.now() };
+        filteredEvents.forEach(e => {
+            const d = new Date(e.timestamp);
+            const day = d.toLocaleDateString();
+            const label = day === todayLocalStr ? 'Hoje' : day;
+            if (!statsByDay[day]) statsByDay[day] = { date: label, join: 0, leave: 0, growth: 0, timestamp: e.timestamp };
+            if (e.type === 'join') statsByDay[day].join++;
+            if (e.type === 'leave') statsByDay[day].leave++;
+            statsByDay[day].growth = statsByDay[day].join - statsByDay[day].leave;
+        });
+        return Object.values(statsByDay).sort((a, b) => a.timestamp - b.timestamp);
+    }, [filteredEvents]);
 
     // KPIs filtered
-    const totalGroupsCreated = groups.filter(g => g.isBotGroup).length;
-    const allViewRates = groups.map(g => {
+    const monitoredGroupsList = monitoredIds.length > 0
+        ? groups.filter(g => monitoredIds.includes(g.id))
+        : groups;
+
+    const totalGroupsCreated = monitoredGroupsList.filter(g => g.isBotGroup).length;
+    const allViewRates = monitoredGroupsList.map(g => {
         const s = stats[g.id];
         return s && s.total > 0 ? (s.views / s.total) * 100 : 0;
     }).filter(v => v > 0);
@@ -257,7 +298,7 @@ const AnalysisTab = ({
                         { label: t('analysis.botGroups'), icon: MessageSquare, color: 'var(--mint)', border: 'rgba(52,211,153,0.15)', bg: 'rgba(52,211,153,0.06)', filterFn: g => g.isBotGroup },
                         { label: t('analysis.personalGroups'), icon: Users, color: 'var(--accent)', border: 'rgba(124,111,255,0.15)', bg: 'rgba(124,111,255,0.06)', filterFn: g => !g.isBotGroup },
                     ].map((item, i) => {
-                        const filtered = groups.filter(item.filterFn);
+                        const filtered = monitoredGroupsList.filter(item.filterFn);
                         return (
                             <div key={i} className="p-4 rounded-xl" style={{ background: item.bg, border: `1px solid ${item.border}` }}>
                                 <div className="flex items-center gap-2 mb-3">
