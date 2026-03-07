@@ -32,6 +32,7 @@ import PromoConfig from './components/PromoConfig';
 import SupportBubble from './components/SupportBubble';
 import AuthPage from './components/AuthPage';
 import AdminTab from './components/AdminTab';
+import BroadcastModal from './components/BroadcastModal';
 
 // Trigger Redeploy: 2026-03-04
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -115,6 +116,11 @@ function App() {
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'user');
   const [userPlan, setUserPlan] = useState(localStorage.getItem('userPlan') || 'teste');
+
+  // Broadcasts
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [unreadBroadcasts, setUnreadBroadcasts] = useState(0);
+  const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && userEmail) {
@@ -259,7 +265,32 @@ function App() {
     };
 
     socket.on('new_support_ticket', handleNewTicket);
-    return () => socket.off('new_support_ticket', handleNewTicket);
+
+    // Broadcasts
+    const handleBroadcastsUpdate = ({ broadcasts: data, unread }) => {
+      setBroadcasts(data || []);
+      setUnreadBroadcasts(unread || 0);
+    };
+    const handleNewBroadcast = (b) => {
+      setBroadcasts(prev => [b, ...prev]);
+      if (!b.read_by?.includes(userEmail)) {
+        setUnreadBroadcasts(prev => prev + 1);
+        addNotification(`📣 Novo aviso: ${b.title}`, 'info');
+      }
+    };
+    const handleBroadcastDeleted = ({ broadcastId }) => {
+      setBroadcasts(prev => prev.filter(b => b.id !== broadcastId));
+    };
+    socket.on('broadcasts_update', handleBroadcastsUpdate);
+    socket.on('new_broadcast', handleNewBroadcast);
+    socket.on('broadcast_deleted', handleBroadcastDeleted);
+
+    return () => {
+      socket.off('new_support_ticket', handleNewTicket);
+      socket.off('broadcasts_update', handleBroadcastsUpdate);
+      socket.off('new_broadcast', handleNewBroadcast);
+      socket.off('broadcast_deleted', handleBroadcastDeleted);
+    };
   }, [socket, userEmail, userRole]);
 
   const handleFileChange = (e) => {
@@ -616,6 +647,30 @@ function App() {
             </button>
           ))}
         </nav>
+
+        {/* Bell button for broadcasts */}
+        <button
+          onClick={() => {
+            setIsBroadcastOpen(true);
+            setUnreadBroadcasts(0);
+          }}
+          className="relative flex items-center gap-2.5 px-3 py-2 rounded-xl w-full transition-colors hover:bg-white/5"
+          style={{ color: unreadBroadcasts > 0 ? 'var(--accent)' : 'var(--text-muted)' }}
+        >
+          <div className="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill={unreadBroadcasts > 0 ? 'var(--accent)' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {unreadBroadcasts > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white animate-bounce"
+                style={{ background: '#ef4444', boxShadow: '0 0 8px rgba(239,68,68,0.7)' }}>
+                {unreadBroadcasts > 9 ? '9+' : unreadBroadcasts}
+              </span>
+            )}
+          </div>
+          <span className="text-xs font-semibold">{unreadBroadcasts > 0 ? 'Avisos novos!' : 'Avisos'}</span>
+        </button>
 
         <div className="mt-auto pt-4 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="flex flex-col gap-1 px-3 py-3 rounded-xl bg-white/5 border border-white/5">
@@ -1280,8 +1335,23 @@ function App() {
       </div>
 
       {isAuthenticated && socket && (
-        <SupportBubble socket={socket} addNotification={addNotification} />
+        <SupportBubble
+          socket={socket}
+          addNotification={addNotification}
+          userPlan={userPlan}
+          userEmail={userEmail}
+          userName={localStorage.getItem('userName') || userEmail}
+        />
       )}
+
+      {/* Broadcast Modal */}
+      <BroadcastModal
+        isOpen={isBroadcastOpen}
+        onClose={() => setIsBroadcastOpen(false)}
+        broadcasts={broadcasts}
+        userEmail={userEmail}
+        socket={socket}
+      />
     </div>
   );
 }

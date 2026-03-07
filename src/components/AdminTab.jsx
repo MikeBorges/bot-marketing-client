@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Shield, User, Crown, Star, Clock, Save, AlertCircle, MessageCircle, Eye, Trash2, CheckCircle } from 'lucide-react';
+import { Shield, User, Crown, Star, Clock, Save, AlertCircle, MessageCircle, Eye, Trash2, CheckCircle, Megaphone, Send, ChevronDown, ChevronUp } from 'lucide-react';
 
 const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const { t } = useTranslation();
@@ -14,6 +14,15 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const [tickets, setTickets] = useState([]);
     const [loadingTickets, setLoadingTickets] = useState(true);
     const [viewingTicket, setViewingTicket] = useState(null);
+
+    // Broadcast state
+    const [broadcasts, setBroadcasts] = useState([]);
+    const [broadcastTitle, setBroadcastTitle] = useState('');
+    const [broadcastMessage, setBroadcastMessage] = useState('');
+    const [broadcastTargets, setBroadcastTargets] = useState([]); // empty = all
+    const [broadcastSending, setBroadcastSending] = useState(false);
+    const [broadcastExpanded, setBroadcastExpanded] = useState(true);
+    const [selectSpecific, setSelectSpecific] = useState(false);
 
     const fetchUsers = async () => {
         try {
@@ -52,6 +61,11 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
             socket.on('new_support_ticket', () => {
                 socket.emit('get_support_tickets');
             });
+            // Broadcasts
+            socket.emit('get_broadcasts');
+            socket.on('broadcasts_update', ({ broadcasts: data }) => setBroadcasts(data || []));
+            socket.on('new_broadcast', (b) => setBroadcasts(prev => [b, ...prev]));
+            socket.on('broadcast_deleted', ({ broadcastId }) => setBroadcasts(prev => prev.filter(b => b.id !== broadcastId)));
         }
 
         return () => {
@@ -59,6 +73,9 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                 socket.off('support_tickets_list');
                 socket.off('refresh_support_tickets');
                 socket.off('new_support_ticket');
+                socket.off('broadcasts_update');
+                socket.off('new_broadcast');
+                socket.off('broadcast_deleted');
             }
         };
     }, [socket]);
@@ -126,6 +143,65 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const handleDeleteTicket = (id) => {
         if (window.confirm('Excluir este ticket permanentemente?')) {
             socket.emit('delete_support_ticket', id);
+        }
+    };
+
+    const handleDeleteBroadcast = (id) => {
+        if (window.confirm('Excluir este aviso permanentemente?')) {
+            socket.emit('delete_broadcast', { broadcastId: id });
+        }
+    };
+
+    const handleSendBroadcast = () => {
+        if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
+            addNotification('Título e mensagem são obrigatórios.', 'error');
+            return;
+        }
+        setBroadcastSending(true);
+        socket.once('broadcast_sent', ({ success, error }) => {
+            setBroadcastSending(false);
+            if (success) {
+                addNotification('Aviso enviado com sucesso!', 'success');
+                setBroadcastTitle('');
+                setBroadcastMessage('');
+                setBroadcastTargets([]);
+                setSelectSpecific(false);
+            } else {
+                addNotification(error || 'Erro ao enviar aviso.', 'error');
+            }
+        });
+        socket.emit('send_broadcast', {
+            title: broadcastTitle,
+            message: broadcastMessage,
+            targetEmails: selectSpecific ? broadcastTargets : []
+        });
+    };
+
+    const handleDeleteUser = async (targetEmail) => {
+        if (!window.confirm(`TEM CERTEZA? Isso excluirá permanentemente o usuário ${targetEmail} e TODOS os seus dados (leads, contas, agendamentos). Esta ação não pode ser desfeita.`)) {
+            return;
+        }
+
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${API_URL}/admin/delete-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    requesterEmail: userEmail,
+                    targetEmail
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                addNotification('Usuário e dados excluídos com sucesso!', 'success');
+                fetchUsers();
+            } else {
+                addNotification(data.error || 'Erro ao excluir usuário', 'error');
+            }
+        } catch (err) {
+            addNotification('Erro de conexão ao excluir usuário', 'error');
         }
     };
 
@@ -218,6 +294,13 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                                 >
                                                     {u.role === 'admin' ? 'REMOVER ADMIN' : 'TORNAR ADMIN'}
                                                 </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(u.email)}
+                                                    className="p-1.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-all shadow-lg shadow-red-500/10"
+                                                    title="Excluir Usuário e Dados"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
                                         )}
                                         {u.role === 'super_admin' && (
@@ -233,6 +316,122 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                     </table>
                 </div>
             </div>
+
+            {/* Seção de Broadcast - Apenas super admin */}
+            {userRole === 'super_admin' && (
+                <div className="space-y-4">
+                    <button
+                        className="flex items-center gap-2 w-full text-left"
+                        onClick={() => setBroadcastExpanded(!broadcastExpanded)}
+                    >
+                        <Megaphone size={18} style={{ color: 'var(--accent)' }} />
+                        <h3 className="text-lg font-bold text-white flex-1">📣 Avisos / Broadcast</h3>
+                        {broadcastExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                    </button>
+
+                    {broadcastExpanded && (
+                        <div className="glass-card space-y-4">
+                            <div className="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>Título do Aviso</label>
+                                    <input
+                                        type="text"
+                                        value={broadcastTitle}
+                                        onChange={e => setBroadcastTitle(e.target.value)}
+                                        placeholder="Ex: Manutenção programada!"
+                                        className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                                        style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-muted)' }}>Mensagem</label>
+                                    <textarea
+                                        rows={4}
+                                        value={broadcastMessage}
+                                        onChange={e => setBroadcastMessage(e.target.value)}
+                                        placeholder="Escreva o aviso para os usuários..."
+                                        className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none resize-none"
+                                        style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Destinatários */}
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>Destinatários</label>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setSelectSpecific(false)}
+                                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${!selectSpecific ? 'border-transparent' : 'border-white/10'}`}
+                                        style={{ background: !selectSpecific ? 'var(--accent)' : 'var(--bg-hover)', color: !selectSpecific ? 'white' : 'var(--text-secondary)' }}
+                                    >
+                                        👥 Todos os usuários
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectSpecific(true)}
+                                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border ${selectSpecific ? 'border-transparent' : 'border-white/10'}`}
+                                        style={{ background: selectSpecific ? 'var(--accent)' : 'var(--bg-hover)', color: selectSpecific ? 'white' : 'var(--text-secondary)' }}
+                                    >
+                                        🎯 Selecionar usuários
+                                    </button>
+                                </div>
+
+                                {selectSpecific && (
+                                    <div className="mt-3 rounded-xl p-3 space-y-2 max-h-40 overflow-y-auto" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
+                                        {users.filter(u => u.role !== 'super_admin').map(u => (
+                                            <label key={u.email} className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={broadcastTargets.includes(u.email)}
+                                                    onChange={e => {
+                                                        if (e.target.checked) setBroadcastTargets(prev => [...prev, u.email]);
+                                                        else setBroadcastTargets(prev => prev.filter(em => em !== u.email));
+                                                    }}
+                                                    className="w-4 h-4 accent-purple-500"
+                                                />
+                                                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{u.name}</span>
+                                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{u.email}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={handleSendBroadcast}
+                                disabled={broadcastSending || !broadcastTitle.trim() || !broadcastMessage.trim()}
+                                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                                style={{ background: 'var(--accent)', color: 'white' }}
+                            >
+                                <Send size={14} />
+                                {broadcastSending ? 'Enviando...' : 'Enviar Aviso'}
+                            </button>
+
+                            {/* Avisos anteriores */}
+                            {broadcasts.length > 0 && (
+                                <div className="space-y-2 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Avisos Enviados</p>
+                                    {broadcasts.map(b => (
+                                        <div key={b.id} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{b.title}</p>
+                                                <p className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--text-secondary)' }}>{b.message}</p>
+                                                <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                                                    {new Date(b.created_at).toLocaleString('pt-BR')} · {b.read_by?.length || 0} leitura(s) ·
+                                                    {b.target_emails?.length > 0 ? ` ${b.target_emails.length} selecionado(s)` : ' Todos'}
+                                                </p>
+                                            </div>
+                                            <button onClick={() => handleDeleteBroadcast(b.id)} className="p-1.5 rounded-lg transition-colors hover:bg-red-500/20" style={{ color: 'var(--text-muted)' }}>
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="flex items-start gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
                 <AlertCircle className="text-amber-500 shrink-0" size={20} />

@@ -122,7 +122,7 @@ const AnalysisTab = ({
                         }}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
                         style={{ background: 'rgba(124,111,255,0.1)', border: '1px solid rgba(124,111,255,0.2)', color: 'var(--accent)' }}
-                        title="Atualizar métricas agora"
+                        title="Atualizar dados agora"
                     >
                         <RefreshCw size={15} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
                         {isRefreshing ? 'Atualizando...' : 'Atualizar'}
