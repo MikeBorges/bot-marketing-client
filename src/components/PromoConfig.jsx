@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImageIcon, Tag, Percent, AlignLeft, CheckCircle2, Plus, X } from 'lucide-react';
+import { ImageIcon, Tag, Percent, AlignLeft, CheckCircle2, Plus, X, Smile } from 'lucide-react';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
     const { t } = useTranslation();
@@ -8,6 +9,7 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
     const [couponDetails, setCouponDetails] = useState({ discount: '', minPurchase: '', validity: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingIndex, setEditingIndex] = useState(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const handleFrameUpload = (e) => {
         const file = e.target.files[0];
@@ -239,15 +241,56 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                             {['{titulo}', '{precoOriginal}', '{precoPromo}', '{cupom}', '{cupom_desconto}', '{cupom_minimo}', '{cupom_validade}', '{link}'].map(tag => (
                                 <button
                                     key={tag}
+                                    type="button"
                                     onClick={() => setAutoConfig({
                                         ...autoConfig,
                                         promoConfig: { ...config, promoMessage: config.promoMessage + ' ' + tag }
                                     })}
-                                    className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-slate-400 hover:text-whatsapp"
+                                    className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-slate-400 hover:text-whatsapp transition-colors"
                                 >
                                     {tag}
                                 </button>
                             ))}
+                        </div>
+
+                        {/* Emoji Picker */}
+                        <div className="pt-2 border-t border-white/5 space-y-2 relative">
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                    <span className="text-xs">😊</span> Emojis
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                    className={`p-1.5 rounded-lg transition-all ${showEmojiPicker ? 'bg-whatsapp text-white' : 'hover:bg-white/10 text-slate-400'}`}
+                                    title="Abrir Seletor de Emojis"
+                                >
+                                    <Smile size={18} />
+                                </button>
+                            </div>
+
+                            {showEmojiPicker && (
+                                <div className="absolute bottom-full right-0 mb-4 z-[100] shadow-2xl animate-in fade-in zoom-in duration-200">
+                                    <div className="fixed inset-0" onClick={() => setShowEmojiPicker(false)} />
+                                    <div className="relative">
+                                        <EmojiPicker
+                                            onEmojiClick={(emojiData) => {
+                                                setAutoConfig({
+                                                    ...autoConfig,
+                                                    promoConfig: { ...config, promoMessage: config.promoMessage + emojiData.emoji }
+                                                });
+                                                // We keep it open if the user wants to add multiple emojis
+                                            }}
+                                            theme={Theme.DARK}
+                                            lazyLoadEmojis={true}
+                                            searchPlaceholder="Procurar emoji..."
+                                            width={320}
+                                            height={400}
+                                            skinTonesDisabled
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

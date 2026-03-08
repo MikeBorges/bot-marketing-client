@@ -18,13 +18,15 @@ import {
   Globe,
   ShoppingBag,
   Bot,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GroupsTab from './components/GroupsTab';
 import AnalysisTab from './components/AnalysisTab';
 import AccountSwitcher from './components/AccountSwitcher';
 import SettingsTab from './components/SettingsTab';
+import ProfileTab from './components/ProfileTab';
 import ScheduledMessages from './components/ScheduledMessages';
 import MercadoLivreTab from './components/MercadoLivreTab';
 import ChatbotTab from './components/ChatbotTab';
@@ -32,6 +34,7 @@ import PromoConfig from './components/PromoConfig';
 import SupportBubble from './components/SupportBubble';
 import AuthPage from './components/AuthPage';
 import AdminTab from './components/AdminTab';
+import AutomationTab from './components/AutomationTab';
 import BroadcastModal from './components/BroadcastModal';
 
 // Trigger Redeploy: 2026-03-04
@@ -579,8 +582,8 @@ function App() {
     { id: 'groups', icon: Users, label: t('menu.groups') },
     { id: 'analysis', icon: BarChart3, label: t('menu.analysis') },
     { id: 'remarketing', icon: Target, label: t('menu.remarketing') },
-    { id: 'automation', icon: MessageSquare, label: t('menu.automation') },
-    { id: 'chatbot', icon: Bot, label: 'Chatbot' },
+    { id: 'automation', icon: Settings, label: t('menu.automation') },
+    { id: 'chatbot', icon: MessageSquare, label: t('menu.chatbot') },
     { id: 'mercadolivre', icon: ShoppingBag, label: 'Mercado Livre' },
     { id: 'config', icon: Settings, label: t('menu.config') },
   ];
@@ -768,13 +771,41 @@ function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
+                className="max-w-6xl mx-auto space-y-6"
               >
                 <header className="mb-2">
                   <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--accent)' }}>{t('menu.dashboard')}</p>
                   <h2 className="text-2xl md:text-3xl font-bold heading-lg" style={{ color: 'var(--text-primary)' }}>{t('dashboard.welcome')}</h2>
                   <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('dashboard.subtitle')}</p>
                 </header>
+
+                {/* Connection Status Banner */}
+                <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${status === 'Conectado'
+                  ? 'bg-[var(--mint-soft)] border-[var(--mint)]/30 text-[var(--mint)]'
+                  : 'bg-red-500/5 border-red-500/20 text-red-400'
+                  }`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${status === 'Conectado' ? 'bg-[var(--mint-soft)] border border-[var(--mint)]/20 shadow-[0_0_15px_rgba(52,211,153,0.1)]' : 'bg-red-500/10'}`}>
+                      {status === 'Conectado' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base">{status === 'Conectado' ? 'WhatsApp Conectado' : 'WhatsApp Desconectado'}</h3>
+                      <p className="text-xs opacity-80">
+                        {status === 'Conectado'
+                          ? 'Seu sistema está operando normalmente.'
+                          : 'Conecte seu WhatsApp para habilitar o envio de mensagens.'}
+                      </p>
+                    </div>
+                  </div>
+                  {status !== 'Conectado' && (
+                    <button
+                      onClick={() => setActiveTab('config')}
+                      className="px-6 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm shadow-lg shadow-red-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                      Conectar Agora
+                    </button>
+                  )}
+                </div>
 
                 {/* Stats Grid — 4 cards compactos */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -882,6 +913,8 @@ function App() {
               </motion.div>
             )}
 
+            {/* Removed ProfileTab as per instruction */}
+
             {activeTab === 'chatbot' && (
               <ChatbotTab socket={socket} status={status} />
             )}
@@ -952,117 +985,22 @@ function App() {
             )}
 
             {activeTab === 'automation' && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                className="max-w-2xl space-y-6"
-              >
-                <header>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--accent)' }}>{t('menu.automation')}</p>
-                  <h2 className="text-2xl font-bold heading-lg" style={{ color: 'var(--text-primary)' }}>{t('automation.title')}</h2>
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('automation.subtitle')}</p>
-                </header>
-
-                {/* ── Card: Link Inteligente ── */}
-                <div className="glass-card">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Target size={15} style={{ color: 'var(--accent)' }} />
-                    <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('automation.smartLink')}</h3>
-                  </div>
-                  <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{t('automation.linkDesc')}</p>
-                  <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
-                    <code className="text-sm font-bold flex-1 truncate" style={{ color: 'var(--mint)' }}>
-                      {`${API_URL}/join?u=${btoa(userEmail)}`}
-                    </code>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${API_URL}/join?u=${btoa(userEmail)}`);
-                        addNotification(t('toast.linkCopied'), 'success');
-                      }}
-                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                      style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: 'var(--mint)' }}
-                    >
-                      {t('automation.copyBtn')}
-                    </button>
-                  </div>
-                  {t('automation.autoRedirect') !== 'automation.autoRedirect' && (
-                    <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{t('automation.autoRedirect')}</p>
-                  )}
-                </div>
-
-                {/* ── Card: Configurações (Escondido no Básico) ── */}
-                {userPlan !== 'basic' && (
-                  <div className="glass-card">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Users size={15} style={{ color: 'var(--accent)' }} />
-                      <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('automation.filtersAndCleanup')}</h3>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('automation.inactivityCleanup')}</label>
-                        <input
-                          type="number"
-                          value={autoConfig.inactivityDays || 0}
-                          onChange={(e) => setAutoConfig({ ...autoConfig, inactivityDays: parseInt(e.target.value) || 0 })}
-                          className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
-                          style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                        />
-                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{t('automation.inactivityDesc')}</p>
-                      </div>
-                    </div>
-                    <div className="pt-4 flex justify-end" style={{ borderTop: '1px solid var(--border)' }}>
-                      <motion.button
-                        onClick={handleSaveConfig}
-                        animate={savedConfig ? { scale: [1, 1.03, 1] } : {}}
-                        transition={{ duration: 0.3 }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer"
-                        style={savedConfig
-                          ? { background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: 'var(--mint)' }
-                          : { background: 'rgba(124,111,255,0.1)', border: '1px solid rgba(124,111,255,0.2)', color: 'var(--accent)' }}
-                      >
-                        <AnimatePresence mode="wait">
-                          {savedConfig ? (
-                            <motion.span key="saved" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} className="flex items-center gap-2">
-                              <CheckCircle2 size={14} />
-                              {t('automation.savedBtn')}
-                            </motion.span>
-                          ) : (
-                            <motion.span key="save" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}>
-                              {t('automation.saveBtn')}
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
-                      </motion.button>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Configuração das Promoções (Chatbot) ── */}
-                <PromoConfig
-                  autoConfig={autoConfig}
-                  setAutoConfig={setAutoConfig}
-                  handleSaveConfig={handleSaveConfig}
-                />
-
-                {/* ── Campanhas Agendadas ── */}
-                <ScheduledMessages
-                  groups={groups}
-                  scheduledMessages={scheduledMessages}
-                  onAdd={handleAddScheduled}
-                  onEdit={handleEditScheduled}
-                  onDelete={handleDeleteScheduled}
-                  socket={socket}
-                />
-
-                {/* ── Nota de Lógica ── */}
-                <div className="flex gap-3 items-start p-4 rounded-xl" style={{ background: 'rgba(124,111,255,0.05)', border: '1px solid rgba(124,111,255,0.1)' }}>
-                  <AlertCircle size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: '2px' }} />
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    <strong style={{ color: 'var(--text-primary)' }}>{t('automation.logicTitle')}</strong> {t('automation.logicDesc')}
-                  </p>
-                </div>
-              </motion.div>
+              <AutomationTab
+                groups={groups}
+                scheduledMessages={scheduledMessages}
+                onAddScheduled={handleAddScheduled}
+                onEditScheduled={handleEditScheduled}
+                onDeleteScheduled={handleDeleteScheduled}
+                socket={socket}
+                autoConfig={autoConfig}
+                setAutoConfig={setAutoConfig}
+                handleSaveConfig={handleSaveConfig}
+                userPlan={userPlan}
+                API_URL={API_URL}
+                userEmail={userEmail}
+                addNotification={addNotification}
+                savedConfig={savedConfig}
+              />
             )}
 
             {activeTab === 'remarketing' && (
@@ -1070,7 +1008,7 @@ function App() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                className="space-y-6"
+                className="max-w-6xl mx-auto space-y-6"
               >
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
