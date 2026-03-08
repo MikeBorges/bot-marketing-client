@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Plus, Trash2, Calendar, Users, Image as ImageIcon, Send, X, CheckSquare, Eye, Clipboard, Search } from 'lucide-react';
+import { Clock, Plus, Trash2, Calendar, Users, Image as ImageIcon, Send, X, CheckSquare, Eye, Clipboard, Search, Smile, RefreshCw } from 'lucide-react';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete, socket }) => {
     const { t, i18n } = useTranslation();
@@ -18,6 +19,7 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete,
     const [listSearchTerm, setListSearchTerm] = useState('');
     const [listDateFilter, setListDateFilter] = useState('');
     const [selectedMsgs, setSelectedMsgs] = useState(new Set());
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     // Carregar rascunho ao montar
     useEffect(() => {
@@ -343,6 +345,25 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete,
                                     {t('scheduled.editBtn')}
                                 </button>
                             )}
+                            {msg.status === 'concluido' && (
+                                <button
+                                    onClick={() => {
+                                        // Abre o modal de criação pré-preenchido com os dados desta campanha
+                                        setEditingMsg(null); // Define como null para criar uma NOVA campanha em vez de editar a ID antiga
+                                        setText(msg.text || '');
+                                        setImagePreview(msg.image || null);
+                                        // Não preenchemos a data para forçar o usuário a escolher um novo horário de re-envio
+                                        setDatetime('');
+                                        setSelectedGroups(msg.targetGroups || []);
+                                        setIsModalOpen(true);
+                                    }}
+                                    className="px-3 py-1.5 bg-whatsapp/10 hover:bg-whatsapp/20 flex items-center gap-1.5 rounded-lg text-sm text-whatsapp font-bold transition-all border border-whatsapp/20"
+                                    title="Re-enviar Campanha"
+                                >
+                                    <RefreshCw size={14} />
+                                    Re-enviar
+                                </button>
+                            )}
                             <button onClick={() => setViewingMsg(msg)} className="p-1.5 hover:bg-blue-500/20 text-slate-400 hover:text-blue-400 rounded-lg transition-colors" title="Ver Conteúdo">
                                 <Eye size={18} />
                             </button>
@@ -391,6 +412,36 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete,
                                             placeholder={t('scheduled.modal.textPlaceholder')}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-whatsapp/50 transition-colors h-32 resize-none"
                                         />
+
+                                        <div className="relative ml-auto">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                                className={`p-1.5 rounded-lg transition-all ${showEmojiPicker ? 'bg-whatsapp text-white' : 'hover:bg-white/10 text-slate-400'}`}
+                                                title="Abrir Seletor de Emojis"
+                                            >
+                                                <Smile size={18} />
+                                            </button>
+
+                                            {showEmojiPicker && (
+                                                <div className="absolute bottom-full right-0 mb-4 z-[100] shadow-2xl animate-in fade-in zoom-in duration-200">
+                                                    <div className="fixed inset-0" onClick={() => setShowEmojiPicker(false)} />
+                                                    <div className="relative">
+                                                        <EmojiPicker
+                                                            onEmojiClick={(emojiData) => {
+                                                                setText(prev => prev + emojiData.emoji);
+                                                            }}
+                                                            theme={Theme.DARK}
+                                                            lazyLoadEmojis={true}
+                                                            searchPlaceholder="Procurar emoji..."
+                                                            width={320}
+                                                            height={400}
+                                                            skinTonesDisabled
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
@@ -543,8 +594,9 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete,
                             </div>
                         </motion.div>
                     </div>
-                )}
-            </AnimatePresence>
+                )
+                }
+            </AnimatePresence >
 
             {/* View Modal */}
             < AnimatePresence >
@@ -597,8 +649,8 @@ const ScheduledMessages = ({ groups, scheduledMessages, onAdd, onEdit, onDelete,
                         </motion.div>
                     </div>
                 )}
-            </AnimatePresence>
-        </div>
+            </AnimatePresence >
+        </div >
     );
 };
 

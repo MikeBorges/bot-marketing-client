@@ -23,7 +23,19 @@ const resources = {
                 "automation": "Automação",
                 "chatbot": "Chatbot",
                 "mercadolivre": "Mercado Livre",
-                "config": "Conexão"
+                "config": "Configuração",
+                "profile": "Meu Perfil"
+            },
+            "profile": {
+                "title": "Perfil do Usuário",
+                "subtitle": "Gerencie suas informações de conta.",
+                "nameLabel": "Nome Completo",
+                "emailLabel": "E-mail",
+                "phoneLabel": "Telefone / WhatsApp",
+                "passwordLabel": "Nova Senha (deixe em branco para manter)",
+                "saveBtn": "Atualizar Perfil",
+                "updating": "Atualizando...",
+                "success": "Perfil atualizado com sucesso!"
             },
             "automation": {
                 "title": "Configurações de Automação",
@@ -54,7 +66,7 @@ const resources = {
                 "operational": "Operante",
                 "disconnected": "Desconectado",
                 "engineDesc1": "Para gerenciar a conexão Web do WhatsApp ou escanear um novo QR Code, vá para a aba de ",
-                "engineDesc2": "Conexão",
+                "engineDesc2": "Configuração",
                 "recentGroups": "Grupos Recentes",
                 "members": "Membros",
                 "noGroups": "Nenhum grupo sincronizado."
@@ -197,8 +209,8 @@ const resources = {
                 }
             },
             "settings": {
-                "title": "Configurações & Conexão",
-                "subtitle": "Gerencie a conexão da sua conta WhatsApp atual.",
+                "title": "Configuração do Sistema",
+                "subtitle": "Gerencie a conexão e o seu perfil aqui.",
                 "connection": "Conexão WhatsApp",
                 "connected": "Conectado",
                 "disconnectBtn": "Desconectar",
@@ -351,8 +363,20 @@ const resources = {
                 "automation": "Automation",
                 "chatbot": "Chatbot",
                 "mercadolivre": "Mercado Livre",
-                "config": "Connection",
-                "admin": "Administration"
+                "config": "Settings",
+                "admin": "Administration",
+                "profile": "My Profile"
+            },
+            "profile": {
+                "title": "User Profile",
+                "subtitle": "Manage your account information.",
+                "nameLabel": "Full Name",
+                "emailLabel": "Email Address",
+                "phoneLabel": "Phone / WhatsApp",
+                "passwordLabel": "New Password (leave blank to keep)",
+                "saveBtn": "Update Profile",
+                "updating": "Updating...",
+                "success": "Profile updated successfully!"
             },
             "automation": {
                 "title": "Automation Settings",
@@ -383,7 +407,7 @@ const resources = {
                 "operational": "Operational",
                 "disconnected": "Disconnected",
                 "engineDesc1": "To manage the WhatsApp Web connection or scan a new QR Code, go to the ",
-                "engineDesc2": "Connection",
+                "engineDesc2": "Settings",
                 "recentGroups": "Recent Groups",
                 "members": "Members",
                 "noGroups": "No synchronized groups."
@@ -526,8 +550,8 @@ const resources = {
                 }
             },
             "settings": {
-                "title": "Settings & Connection",
-                "subtitle": "Manage your current WhatsApp account connection.",
+                "title": "Settings & Profile",
+                "subtitle": "Manage your connection and profile here.",
                 "connection": "WhatsApp Connection",
                 "connected": "Connected",
                 "disconnectBtn": "Disconnect",
@@ -681,8 +705,20 @@ const resources = {
                 "automation": "Automatización",
                 "chatbot": "Chatbot",
                 "mercadolivre": "Mercado Libre",
-                "config": "Conexión",
-                "admin": "Administración"
+                "config": "Configuración",
+                "admin": "Administración",
+                "profile": "Mi Perfil"
+            },
+            "profile": {
+                "title": "Perfil de Usuario",
+                "subtitle": "Gestione la información de su cuenta.",
+                "nameLabel": "Nombre Completo",
+                "emailLabel": "Correo Electrónico",
+                "phoneLabel": "Teléfono / WhatsApp",
+                "passwordLabel": "Nueva Contraseña (dejar en blanco para mantener)",
+                "saveBtn": "Actualizar Perfil",
+                "updating": "Actualizando...",
+                "success": "¡Perfil actualizado con éxito!"
             },
             "automation": {
                 "title": "Configuración de Automatización",
@@ -713,7 +749,7 @@ const resources = {
                 "operational": "Operativo",
                 "disconnected": "Desconectado",
                 "engineDesc1": "Para gestionar la conexión Web de WhatsApp o escanear un nuevo código QR, vaya a la pestaña de ",
-                "engineDesc2": "Conexión",
+                "engineDesc2": "Configuración",
                 "recentGroups": "Grupos Recientes",
                 "members": "Miembros",
                 "noGroups": "Ningún grupo sincronizado."

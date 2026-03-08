@@ -29,6 +29,11 @@
   /* Acento secundário — Menta tênue */
   --mint: #34d399;
   --mint-soft: rgba(52, 211, 153, 0.10);
+  
+  /* WhatsApp Color */
+  --whatsapp: #25d366;
+  --whatsapp-dark: #128c7e;
+  --whatsapp-soft: rgba(37, 211, 102, 0.1);
 
   /* Status */
   --success: #34d399;

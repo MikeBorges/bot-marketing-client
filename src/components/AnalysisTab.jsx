@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { MessageSquare, Users, Download, BarChart3, Calendar, Eye, RefreshCw } from 'lucide-react';
+import { MessageSquare, Users, Download, BarChart3, Calendar, Eye, RefreshCw, Search } from 'lucide-react';
 
 const AnalysisTab = ({
     analysisTimeRange,
@@ -61,6 +61,27 @@ const AnalysisTab = ({
     const [customFrom, setCustomFrom] = useState('');
     const [customTo, setCustomTo] = useState(todayStr);
 
+    // Estados do Modal Detalhado
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [modalFilterGroup, setModalFilterGroup] = useState('all'); // 'all' ou ID do grupo
+    const [modalFilterFrom, setModalFilterFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    const [modalFilterTo, setModalFilterTo] = useState(new Date().toISOString().split('T')[0]);
+    const [appliedModalFilters, setAppliedModalFilters] = useState({
+        group: 'all',
+        from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        to: new Date().toISOString().split('T')[0]
+    });
+    const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'desc' });
+
+    const handleApplyModalFilters = () => {
+        setAppliedModalFilters({
+            group: modalFilterGroup,
+            from: modalFilterFrom,
+            to: modalFilterTo
+        });
+    };
+
+
     const applyCustomRange = () => {
         if (!customFrom || !customTo) return;
         const from = new Date(customFrom).setHours(0, 0, 0, 0);
@@ -98,12 +119,90 @@ const AnalysisTab = ({
         ? (allViewRates.reduce((a, b) => a + b, 0) / allViewRates.length).toFixed(1)
         : 0;
 
+    // Lógica de exportação CSV do Modal (Estilo Excel)
+    const downloadFilteredCSV = (data) => {
+        const headers = ["Data", "Grupo", "Entradas", "Saídas", "Saldo"];
+        const rows = data.map(d => [
+            d.date,
+            d.groupName,
+            d.joins,
+            d.leaves,
+            d.balance
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `relatorio_agrupado_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const modalAggregatedData = useMemo(() => {
+        const filteredByModal = filteredEvents.filter(e => {
+            const eventDate = new Date(e.timestamp).toISOString().split('T')[0];
+            const matchesDate = eventDate >= appliedModalFilters.from && eventDate <= appliedModalFilters.to;
+            const matchesGroup = appliedModalFilters.group === 'all' || e.groupId === appliedModalFilters.group;
+            return matchesDate && matchesGroup;
+        });
+
+        const aggregation = {};
+
+        filteredByModal.forEach(e => {
+            const dateStr = new Date(e.timestamp).toLocaleDateString();
+            const groupName = e.groupName || e.groupId;
+            const key = `${dateStr}-${groupName}`;
+            if (!aggregation[key]) {
+                aggregation[key] = {
+                    date: dateStr,
+                    groupName: groupName,
+                    joins: 0,
+                    leaves: 0,
+                    balance: 0,
+                    timestamp: e.timestamp
+                };
+            }
+            if (e.type === 'join') aggregation[key].joins++;
+            if (e.type === 'leave') aggregation[key].leaves++;
+            aggregation[key].balance = aggregation[key].joins - aggregation[key].leaves;
+        });
+
+        const sortedData = Object.values(aggregation).sort((a, b) => {
+            if (sortConfig.key === 'date') {
+                return sortConfig.direction === 'asc'
+                    ? b.timestamp - a.timestamp
+                    : a.timestamp - b.timestamp;
+            }
+            if (a[sortConfig.key] < b[sortConfig.key]) {
+                return sortConfig.direction === 'asc' ? -1 : 1;
+            }
+            if (a[sortConfig.key] > b[sortConfig.key]) {
+                return sortConfig.direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+
+        return sortedData;
+    }, [filteredEvents, appliedModalFilters, sortConfig]);
+
+    const requestSort = (key) => {
+        let direction = 'desc';
+        if (sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
-            className="space-y-6"
+            className="w-full max-w-6xl mx-auto space-y-6"
         >
             {/* ── Header padrão ─────────────────────────────────────── */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -324,31 +423,268 @@ const AnalysisTab = ({
             </div>
 
             {/* ── Log de Atividades ────────────────────────────────── */}
-            <div className="glass-card">
-                <h3 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                    <Eye size={15} style={{ color: 'var(--accent)' }} />
-                    {t('analysis.activityLogTitle')}
-                </h3>
-                <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                    {filteredEvents.slice(-5).reverse().map((e, idx) => (
-                        <div key={idx} className="flex items-center justify-between py-3">
-                            <div className="flex items-center gap-3">
-                                <div className={`glow-dot w-2 h-2`} style={{ background: e.type === 'join' ? 'var(--mint)' : 'var(--danger)', animation: 'none' }} />
-                                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                    {e.type === 'join' ? t('analysis.activityJoin') : t('analysis.activityLeave')} <strong style={{ color: 'var(--text-primary)' }}>{e.groupName}</strong>
-                                </span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Tabela de Métricas por Grupo */}
+                <div className="lg:col-span-2 glass-card overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                            <BarChart3 size={15} style={{ color: 'var(--accent)' }} />
+                            Métricas por Grupo
+                        </h3>
+                        <button
+                            onClick={() => setShowDetailsModal(true)}
+                            className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg transition-all hover:opacity-80"
+                            style={{ background: 'rgba(124,111,255,0.1)', color: 'var(--accent)', border: '1px solid rgba(124,111,255,0.2)' }}
+                        >
+                            Ver Detalhes
+                        </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Grupo</th>
+                                    <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Entradas</th>
+                                    <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Saídas</th>
+                                    <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--text-muted)' }}>Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                                {(() => {
+                                    const groupMap = {};
+                                    filteredEvents.forEach(e => {
+                                        if (!groupMap[e.groupId]) {
+                                            groupMap[e.groupId] = { name: e.groupName || 'Grupo Desconhecido', joins: 0, leaves: 0 };
+                                        }
+                                        if (e.type === 'join') groupMap[e.groupId].joins++;
+                                        if (e.type === 'leave') groupMap[e.groupId].leaves++;
+                                    });
+
+                                    const sortedGroups = Object.values(groupMap).sort((a, b) => (b.joins - b.leaves) - (a.joins - a.leaves));
+
+                                    if (sortedGroups.length === 0) {
+                                        return (
+                                            <tr>
+                                                <td colSpan="4" className="py-8 text-center text-sm italic" style={{ color: 'var(--text-muted)' }}>
+                                                    Nenhuma atividade registrada no período.
+                                                </td>
+                                            </tr>
+                                        );
+                                    }
+
+                                    return sortedGroups.map((g, idx) => {
+                                        const balance = g.joins - g.leaves;
+                                        return (
+                                            <tr key={idx} className="hover:bg-white/5 transition-colors">
+                                                <td className="py-3 px-4 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{g.name}</td>
+                                                <td className="py-3 px-4 text-sm text-center font-bold" style={{ color: 'var(--mint)' }}>+{g.joins}</td>
+                                                <td className="py-3 px-4 text-sm text-center font-bold" style={{ color: 'var(--danger)' }}>-{g.leaves}</td>
+                                                <td className="py-3 px-4 text-sm text-right">
+                                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${balance >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                        {balance > 0 ? '+' : ''}{balance}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    });
+                                })()}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Log de Atividades Recentes */}
+                <div className="glass-card">
+                    <h3 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                        <Eye size={15} style={{ color: 'var(--accent)' }} />
+                        {t('analysis.activityLogTitle')}
+                    </h3>
+                    <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                        {filteredEvents.slice(-8).reverse().map((e, idx) => (
+                            <div key={idx} className="flex items-center justify-between py-3">
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`glow-dot w-2 h-2`} style={{ background: e.type === 'join' ? 'var(--mint)' : 'var(--danger)', animation: 'none' }} />
+                                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                            {e.type === 'join' ? 'Entrou' : 'Saiu'}
+                                        </span>
+                                    </div>
+                                    <span className="text-[11px] ml-5" style={{ color: 'var(--text-secondary)' }}>{e.groupName}</span>
+                                </div>
+                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
-                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(e.timestamp).toLocaleTimeString()}</span>
-                        </div>
-                    ))}
-                    {filteredEvents.length === 0 && (
-                        <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('analysis.emptyActivity')}</p>
-                    )}
+                        ))}
+                        {filteredEvents.length === 0 && (
+                            <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>{t('analysis.emptyActivity')}</p>
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {/* ── Modal Detalhado ───────────────────────────────────── */}
+            {
+                showDetailsModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setShowDetailsModal(false)}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden glass-card flex flex-col p-0"
+                            style={{ border: '1px solid var(--border)' }}
+                        >
+                            {/* Modal Header */}
+                            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+                                <div>
+                                    <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Detalhamento de Métricas</h3>
+                                    <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Análise granular por grupo, data e tipo de evento.</p>
+                                </div>
+                                <button onClick={() => setShowDetailsModal(false)} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                                    <RefreshCw size={20} className="rotate-45" style={{ color: 'var(--text-muted)' }} />
+                                </button>
+                            </div>
+
+                            {/* Modal Filters */}
+                            <div className="p-6 bg-white/5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end border-b" style={{ borderColor: 'var(--border)' }}>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Filtrar Grupo</label>
+                                    <select
+                                        value={modalFilterGroup}
+                                        onChange={e => setModalFilterGroup(e.target.value)}
+                                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                                        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    >
+                                        <option value="all">Todos os Grupos</option>
+                                        {monitoredGroupsList.map(g => (
+                                            <option key={g.id} value={g.id}>{g.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>De (Início)</label>
+                                    <input
+                                        type="date"
+                                        value={modalFilterFrom}
+                                        onChange={e => setModalFilterFrom(e.target.value)}
+                                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                                        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Até (Fim)</label>
+                                    <input
+                                        type="date"
+                                        value={modalFilterTo}
+                                        onChange={(e) => setModalFilterTo(e.target.value)}
+                                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none [color-scheme:dark]"
+                                        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    />
+                                </div>
+
+                                <div className="flex items-end">
+                                    <button
+                                        onClick={handleApplyModalFilters}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 h-[38.5px]"
+                                    >
+                                        <Search size={14} />
+                                        Buscar
+                                    </button>
+                                </div>
+
+                                <div className="flex items-end">
+                                    <button
+                                        onClick={() => downloadFilteredCSV(modalAggregatedData)}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 h-[38.5px]"
+                                    >
+                                        <Download size={14} />
+                                        Exportar Excel
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Modal Content */}
+                            <div className="flex-1 overflow-y-auto p-0">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="sticky top-0 z-10" style={{ background: 'var(--bg-surface)' }}>
+                                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <th
+                                                onClick={() => requestSort('date')}
+                                                className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer hover:bg-white/5 transition-colors"
+                                                style={{ color: 'var(--text-muted)' }}
+                                            >
+                                                <div className="flex items-center justify-center gap-1">
+                                                    Data
+                                                    <RefreshCw size={10} className={sortConfig.key === 'date' ? 'opacity-100' : 'opacity-20'} />
+                                                </div>
+                                            </th>
+                                            <th className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Grupo</th>
+                                            <th
+                                                onClick={() => requestSort('joins')}
+                                                className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer hover:bg-white/5 transition-colors"
+                                                style={{ color: 'var(--text-muted)' }}
+                                            >
+                                                <div className="flex items-center justify-center gap-1">
+                                                    Entradas
+                                                    <RefreshCw size={10} className={sortConfig.key === 'joins' ? 'opacity-100' : 'opacity-20'} />
+                                                </div>
+                                            </th>
+                                            <th
+                                                onClick={() => requestSort('leaves')}
+                                                className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer hover:bg-white/5 transition-colors"
+                                                style={{ color: 'var(--text-muted)' }}
+                                            >
+                                                <div className="flex items-center justify-center gap-1">
+                                                    Saídas
+                                                    <RefreshCw size={10} className={sortConfig.key === 'leaves' ? 'opacity-100' : 'opacity-20'} />
+                                                </div>
+                                            </th>
+                                            <th
+                                                onClick={() => requestSort('balance')}
+                                                className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider text-right cursor-pointer hover:bg-white/5 transition-colors"
+                                                style={{ color: 'var(--text-muted)' }}
+                                            >
+                                                <div className="flex items-center justify-end gap-1">
+                                                    Saldo
+                                                    <RefreshCw size={10} className={sortConfig.key === 'balance' ? 'opacity-100' : 'opacity-20'} />
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                                        {modalAggregatedData.length > 0 ? modalAggregatedData.map((row, index) => (
+                                            <tr key={index} className="hover:bg-white/5 transition-colors">
+                                                <td className="py-4 px-6 text-xs text-center font-medium" style={{ color: 'var(--text-muted)' }}>{row.date}</td>
+                                                <td className="py-4 px-6 text-xs font-bold text-white max-w-[300px] truncate" title={row.groupName}>{row.groupName}</td>
+                                                <td className="py-4 px-6 text-xs text-center font-mono text-emerald-400 font-bold">+{row.joins}</td>
+                                                <td className="py-4 px-6 text-xs text-center font-mono text-rose-400 font-bold">-{row.leaves}</td>
+                                                <td className={`py-4 px-6 text-sm text-right font-mono font-bold ${row.balance >= 0 ? 'text-blue-400' : 'text-rose-400'}`}>
+                                                    {row.balance > 0 ? `+${row.balance}` : row.balance}
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="5" className="py-20 text-center">
+                                                    <div className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Nenhum dado encontrado com os filtros selecionados.</div>
+                                                    <button
+                                                        onClick={() => { setModalFilterGroup('all'); setModalFilterFrom(''); setModalFilterTo(''); }}
+                                                        className="mt-2 text-xs font-bold" style={{ color: 'var(--accent)' }}
+                                                    >
+                                                        Limpar filtros
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
         </motion.div>
     );
 };
 
 export default AnalysisTab;
-
