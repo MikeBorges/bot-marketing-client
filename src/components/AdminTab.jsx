@@ -8,7 +8,7 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', plan: 'teste' });
+    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', plan: 'basic' });
     const [creating, setCreating] = useState(false);
 
     const [tickets, setTickets] = useState([]);
@@ -132,7 +132,7 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
             if (response.ok) {
                 addNotification(t('admin.successCreate'), 'success');
                 setIsCreateModalOpen(false);
-                setNewUser({ name: '', email: '', password: '', plan: 'teste' });
+                setNewUser({ name: '', email: '', password: '', plan: 'basic' });
                 fetchUsers();
             } else {
                 addNotification(data.error || t('admin.errorCreate'), 'error');
@@ -317,8 +317,8 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                                         className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-white focus:outline-none focus:border-purple-500 disabled:opacity-50"
                                                     >
                                                         <option value="pro" className="bg-[#1a1c24]">💎 PRO</option>
+                                                        <option value="intermediario" className="bg-[#1a1c24]">🚀 INTERMEDIÁRIO</option>
                                                         <option value="basic" className="bg-[#1a1c24]">⭐ BASIC</option>
-                                                        <option value="teste" className="bg-[#1a1c24]">⌛ TESTE</option>
                                                     </select>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -361,7 +361,7 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                             <div>
                                 <p className="text-sm font-bold text-amber-500">Regras de Administração</p>
                                 <ul className="text-xs text-amber-500/70 mt-1 list-disc ml-4 space-y-1">
-                                    <li>Super Admins podem gerenciar cargos (Admin) e planos (Pro/Basic/Teste) de todos.</li>
+                                    <li>Super Admins podem gerenciar cargos (Admin) e planos (Pro/Intermediário/Basic) de todos.</li>
                                     <li>Admins podem gerenciar apenas os planos de usuários comuns.</li>
                                     <li>Admins não podem alterar outros Admins nem promover ninguém a cargo administrativo.</li>
                                 </ul>
@@ -686,8 +686,8 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
                                 >
                                     <option value="pro" className="bg-[#1a1c24]">💎 PRO</option>
+                                    <option value="intermediario" className="bg-[#1a1c24]">🚀 INTERMEDIÁRIO</option>
                                     <option value="basic" className="bg-[#1a1c24]">⭐ BASIC</option>
-                                    <option value="teste" className="bg-[#1a1c24]">⌛ TESTE (3 DIAS)</option>
                                 </select>
                             </div>
                             <div className="flex gap-3 mt-8">

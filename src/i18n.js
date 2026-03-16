@@ -5,7 +5,7 @@ const resources = {
     pt: {
         translation: {
             "app": {
-                "title": "BotManager",
+                "title": "OffeHub",
                 "activeAccount": "Conta Ativa",
                 "account": "Conta",
                 "online": "Online",
@@ -346,7 +346,7 @@ const resources = {
     en: {
         translation: {
             "app": {
-                "title": "BotManager",
+                "title": "OffeHub",
                 "activeAccount": "Active Account",
                 "account": "Account",
                 "online": "Online",
@@ -687,7 +687,7 @@ const resources = {
     es: {
         translation: {
             "app": {
-                "title": "BotManager",
+                "title": "OffeHub",
                 "activeAccount": "Cuenta Activa",
                 "account": "Cuenta",
                 "online": "En línea",

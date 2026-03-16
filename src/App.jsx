@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import LandingPage from './components/LandingPage';
 import { io } from 'socket.io-client';
 import {
   LayoutDashboard,
@@ -116,6 +117,7 @@ function App() {
   const [accounts, setAccounts] = useState([{ id: 'default', name: t('app.mainAccount') }]);
   const [activeAccountId, setActiveAccountId] = useState(localStorage.getItem('activeAccountId') || 'default');
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('isAuthenticated') === 'true');
+  const [showAuth, setShowAuth] = useState(false);
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'user');
   const [userPlan, setUserPlan] = useState(localStorage.getItem('userPlan') || 'teste');
@@ -155,7 +157,7 @@ function App() {
 
 
   const addNotification = (message, type = 'success') => {
-    const id = Date.now();
+    const id = Date.now() + Math.random();
     setNotifications(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
@@ -187,6 +189,14 @@ function App() {
       addNotification(t('toast.messageSent'), 'success');
       setRemarketingModal({ isOpen: false, lead: null, text: '' });
     });
+    socket.on('error', (msg) => {
+      addNotification(msg, 'error');
+    });
+    socket.on('new_group', (data) => {
+      addNotification(`✅ Grupo "${data.name}" criado com sucesso!`, 'success');
+      // Opcional: abrir o link do grupo automaticamente ou mostrar em um modal
+      console.log('Novo grupo criado:', data.link);
+    });
 
     return () => {
       socket.off('status');
@@ -201,6 +211,8 @@ function App() {
       socket.off('events_update');
       socket.off('stats_update');
       socket.off('scheduled_update');
+      socket.off('error');
+      socket.off('new_group');
     };
   }, []);
 
@@ -329,9 +341,10 @@ function App() {
 
     // 2. Limpa dados de autenticação
     setIsAuthenticated(false);
+    setShowAuth(false);
     setUserEmail('');
     setUserRole('user');
-    setUserPlan('teste');
+    setUserPlan('basic');
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userRole');
@@ -377,7 +390,7 @@ function App() {
 
   const handleAddScheduled = (msgData) => {
     // Optimistic update
-    const tempId = 'temp-' + Date.now();
+    const tempId = 'temp-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     const optimisticMsg = {
       ...msgData,
       id: tempId,
@@ -589,9 +602,11 @@ function App() {
   ];
 
   // Restrição de Plano Básico
-  if (userPlan === 'basic') {
+  const isBasicPlan = userPlan && (userPlan.toLowerCase() === 'basic' || userPlan.toLowerCase() === 'teste');
+
+  if (isBasicPlan) {
     menuItems = menuItems.filter(item =>
-      !['analysis', 'remarketing', 'mercadolivre'].includes(item.id)
+      !['analysis', 'remarketing', 'mercadolivre', 'chatbot'].includes(item.id)
     );
   }
 
@@ -600,16 +615,19 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <AuthPage onLogin={(user) => {
-      setIsAuthenticated(true);
-      setUserEmail(user.email);
-      setUserRole(user.role);
-      setUserPlan(user.plan);
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userEmail', user.email);
-      localStorage.setItem('userRole', user.role);
-      localStorage.setItem('userPlan', user.plan);
-    }} />;
+    if (showAuth) {
+      return <AuthPage onLogin={(user) => {
+        setIsAuthenticated(true);
+        setUserEmail(user.email);
+        setUserRole(user.role);
+        setUserPlan(user.plan);
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userEmail', user.email);
+        localStorage.setItem('userRole', user.role);
+        localStorage.setItem('userPlan', user.plan);
+      }} />;
+    }
+    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
   }
 
   return (
@@ -621,7 +639,7 @@ function App() {
             <MessageSquare size={18} style={{ color: 'var(--accent)' }} />
           </div>
           <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>
-            BotManager
+            OffeHub
           </h1>
         </div>
 
@@ -684,7 +702,9 @@ function App() {
                 userPlan === 'basic' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                   'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                 }`}>
-                {userPlan === 'basic' ? 'BASIC' : userPlan === 'pro' ? 'PRO' : 'TRIAL'}
+                {userPlan === 'pro' ? 'PRO' :
+                  userPlan === 'intermediario' ? 'INTERMEDIÁRIO' :
+                    userPlan === 'basic' ? 'BASIC' : 'TRIAL'}
               </span>
             </div>
           </div>
@@ -845,24 +865,26 @@ function App() {
                   </div>
 
                   {/* Mercado Livre Status Card */}
-                  <div
-                    className="stat-card cursor-pointer"
-                    onClick={() => setActiveTab('mercadolivre')}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: autoConfig?.mercadolivre?.accessToken ? 'rgba(234,179,8,0.1)' : 'var(--bg-hover)' }}>
-                        <ShoppingBag size={16} style={{ color: autoConfig?.mercadolivre?.accessToken ? '#eab308' : 'var(--text-muted)' }} />
+                  {userPlan !== 'basic' && (
+                    <div
+                      className="stat-card cursor-pointer"
+                      onClick={() => setActiveTab('mercadolivre')}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: autoConfig?.mercadolivre?.accessToken ? 'rgba(234,179,8,0.1)' : 'var(--bg-hover)' }}>
+                          <ShoppingBag size={16} style={{ color: autoConfig?.mercadolivre?.accessToken ? '#eab308' : 'var(--text-muted)' }} />
+                        </div>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Mercado Livre</span>
                       </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Mercado Livre</span>
+                      <div className="text-lg font-bold heading-lg" style={{ color: autoConfig?.mercadolivre?.accessToken ? '#eab308' : 'var(--text-muted)' }}>
+                        {autoConfig?.mercadolivre?.accessToken ? 'Vinculado' : 'Não vinculado'}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="glow-dot w-1.5 h-1.5" style={{ background: autoConfig?.mercadolivre?.accessToken ? '#eab308' : 'var(--text-muted)', animation: autoConfig?.mercadolivre?.accessToken ? undefined : 'none' }} />
+                        <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{autoConfig?.mercadolivre?.accessToken ? 'API conectada' : 'Clique para configurar'}</span>
+                      </div>
                     </div>
-                    <div className="text-lg font-bold heading-lg" style={{ color: autoConfig?.mercadolivre?.accessToken ? '#eab308' : 'var(--text-muted)' }}>
-                      {autoConfig?.mercadolivre?.accessToken ? 'Vinculado' : 'Não vinculado'}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="glow-dot w-1.5 h-1.5" style={{ background: autoConfig?.mercadolivre?.accessToken ? '#eab308' : 'var(--text-muted)', animation: autoConfig?.mercadolivre?.accessToken ? undefined : 'none' }} />
-                      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{autoConfig?.mercadolivre?.accessToken ? 'API conectada' : 'Clique para configurar'}</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Bottom Section: Status + Grupos Recentes */}
@@ -915,7 +937,7 @@ function App() {
 
             {/* Removed ProfileTab as per instruction */}
 
-            {activeTab === 'chatbot' && (
+            {activeTab === 'chatbot' && !isBasicPlan && (
               <ChatbotTab socket={socket} status={status} />
             )}
 
@@ -935,6 +957,7 @@ function App() {
                 status={status}
                 qrCode={qrCode}
                 handleLogout={handleLogout}
+                userPlan={userPlan}
               />
             )}
 
@@ -954,6 +977,7 @@ function App() {
                 handleCreateManualGroup={handleCreateManualGroup}
                 onRefreshViews={() => socket.emit('refresh_views')}
                 socket={socket}
+                userPlan={userPlan}
               />
             )}
 

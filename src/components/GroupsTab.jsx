@@ -17,9 +17,14 @@ const GroupsTab = ({
     handleDeleteGroup,
     handleCreateManualGroup,
     onRefreshViews,
-    socket
+    socket,
+    userPlan
 }) => {
     const { t } = useTranslation();
+    const isBasicPlan = userPlan && (userPlan.toLowerCase() === 'basic' || userPlan.toLowerCase() === 'teste');
+    const botGroupsCount = groups.filter(g => g.isBotGroup).length;
+    const groupLimit = isBasicPlan ? 5 : (userPlan?.toLowerCase() === 'intermediario' ? 10 : 999);
+    const hasReachedLimit = botGroupsCount >= groupLimit;
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [refreshDone, setRefreshDone] = useState(false);
 
@@ -59,27 +64,37 @@ const GroupsTab = ({
     const submitCreation = () => {
         const name = finalGroupName();
         if (!name) return;
-        handleCreateManualGroup(name, newGroupDesc);
-        // Atualiza o baseName para que a automação use o mesmo padrão
-        // e o groupStartIndex para continuar do próximo número
-        const nextConfig = { ...autoConfig, baseName: newGroupName.trim() };
+
+        // 1. Salva a configuração ANTES de limpar os campos
+        const nextConfig = { ...autoConfig, baseName: newGroupName.trim(), groupDescription: newGroupDesc };
         if (newGroupIndex) nextConfig.groupStartIndex = parseInt(newGroupIndex) + 1;
         setAutoConfig(nextConfig);
+
+        // 2. Chama a criação manual passando a descrição atual
+        handleCreateManualGroup(name, newGroupDesc);
+
+        // 3. Limpa os campos da UI
         setNewGroupName('');
         setNewGroupDesc('');
         setNewGroupIndex('');
         setIsModalOpen(false);
+
+        // 4. Persiste a configuração no backend
+        // handleSaveConfig já usa o autoConfig atualizado via setAutoConfig
+        setTimeout(() => handleSaveConfig(), 100);
     };
 
     // ─── Análise de Grupos ───────────────────────────────────────────────────
-    const analysisData = groups.map(g => {
-        const views = stats?.[g.id]?.views || 0;
-        const viewsPct = g.participants > 0 ? ((views / g.participants) * 100) : 0;
-        const createdAt = stats?.[g.id]?.createdAt || null;
-        return { ...g, views, viewsPct, createdAt };
-    });
+    // Filtra apenas os grupos selecionados para monitoramento E opcionalmente pelo termo de busca
+    const analysisData = groups
+        .filter(g => (autoConfig.monitoredGroups || []).includes(g.id))
+        .map(g => {
+            const views = stats?.[g.id]?.views || 0;
+            const viewsPct = g.participants > 0 ? ((views / g.participants) * 100) : 0;
+            const createdAt = stats?.[g.id]?.createdAt || null;
+            return { ...g, views, viewsPct, createdAt };
+        });
 
-    // Filtra pela barra de pesquisa da análise (não afeta os KPIs)
     const filteredAnalysis = analysisTerm.trim()
         ? analysisData.filter(g => g.name.toLowerCase().includes(analysisTerm.toLowerCase()))
         : analysisData;
@@ -241,66 +256,106 @@ const GroupsTab = ({
                         exit={{ opacity: 0, y: -10 }}
                         className="space-y-6"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {groups.filter(g => (g.name || "").toLowerCase().includes(searchTerm.toLowerCase())).map((group) => (
-                                <div key={group.id} className="glass-card group hover:scale-[1.02] transition-all relative overflow-hidden">
-                                    {group.unreadCount > 0 && (
-                                        <div className="absolute top-0 right-0 bg-whatsapp text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg shadow-lg">
-                                            {t('groups.newBadge', { count: group.unreadCount })}
-                                        </div>
-                                    )}
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 rounded-xl bg-whatsapp/10 flex items-center justify-center text-whatsapp font-bold text-xl uppercase">
-                                            {group.name.substring(0, 1)}
-                                        </div>
-                                        <div className="bg-white/5 px-2 py-1 rounded text-[10px] font-bold text-slate-400 italic">
-                                            ID: {group.id.split('@')[0]}
-                                        </div>
-                                    </div>
-                                    <h3 className="text-lg font-bold text-white mb-1 truncate" title={group.name}>{group.name}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-4">
-                                        <Users size={16} />
-                                        {group.participants} {t('scheduled.modal.members')}
-                                    </div>
-                                    <div className="mt-auto flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-1.5 min-w-0">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); toggleMonitoring(group.id); }}
-                                                className={`w-4 h-4 rounded-full flex-shrink-0 border transition-all ${(autoConfig.monitoredGroups || []).includes(group.id) ? 'bg-whatsapp border-whatsapp' : 'bg-slate-700 border-white/20'}`}
-                                                title={(autoConfig.monitoredGroups || []).includes(group.id) ? "Monitoramento Ativo" : "Monitoramento Inativo"}
-                                            />
-                                            <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase truncate">
-                                                {(autoConfig.monitoredGroups || []).includes(group.id) ? 'Monitorando' : 'Ignorado'}
-                                            </span>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                            <span className="text-[9px] md:text-[10px] text-slate-500">{t('groups.engagement')}</span>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-xs font-bold text-white">{stats?.[group.id]?.views || 0}</span>
-                                                <div className="w-8 md:w-12 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-whatsapp transition-all duration-500"
-                                                        style={{ width: `${Math.min(100, (stats?.[group.id]?.views / (group.participants || 1) * 100) || 0)}%` }}
-                                                    />
+                        <div className="glass-card overflow-hidden">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 border-b border-white/5">
+                                <div className="flex items-center gap-4">
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                        <Users size={20} className="text-whatsapp" />
+                                        {t('groups.title')}
+                                    </h3>
+                                    <button
+                                        onClick={handleRefreshClick}
+                                        disabled={isRefreshing}
+                                        title="Sincronizar grupos agora"
+                                        className={`flex items-center gap-2 px-3 py-1.5 border font-bold text-xs rounded-lg transition-all ${refreshDone
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                            : 'bg-whatsapp/10 hover:bg-whatsapp/20 border-whatsapp/20 text-whatsapp'
+                                            } disabled:opacity-60`}
+                                    >
+                                        <RefreshCw size={12} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
+                                        {isRefreshing ? 'Sincronizando...' : refreshDone ? '✓ Sincronizado!' : 'Sincronizar'}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-500">
+                                    {searchTerm ? `${groups.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase())).length} resultados` : `${groups.length} grupos encontrados`}
+                                </p>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-white/5">
+                                            <th
+                                                className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                                onClick={toggleAllMonitoring}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${(autoConfig.monitoredGroups || []).length === groups.length && groups.length > 0 ? 'bg-whatsapp border-whatsapp' : 'border-white/20'}`}>
+                                                        {(autoConfig.monitoredGroups || []).length === groups.length && groups.length > 0 && <CheckCircle2 size={12} className="text-black" />}
+                                                    </div>
+                                                    Monitorar
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeleteGroup(group.id, group.name)}
-                                            className="p-1.5 md:p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-lg transition-colors flex-shrink-0"
-                                            title={t('groups.deleteTooltip')}
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                            {groups.length === 0 && (
-                                <div className="col-span-full py-20 text-center glass rounded-2xl border-dashed border-white/10">
-                                    <Users size={48} className="mx-auto text-slate-600 mb-4" />
-                                    <p className="text-slate-500">{t('groups.empty')}</p>
-                                </div>
-                            )}
+                                            </th>
+                                            <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold">Grupo</th>
+                                            <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold">Membros</th>
+                                            <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {groups.filter(g => (g.name || "").toLowerCase().includes(searchTerm.toLowerCase())).map((group) => (
+                                            <tr key={group.id} className={`hover:bg-white/5 transition-all ${!(autoConfig.monitoredGroups || []).includes(group.id) ? 'opacity-70' : ''}`}>
+                                                <td className="px-4 py-4" onClick={() => toggleMonitoring(group.id)}>
+                                                    <div className="flex items-center justify-start">
+                                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all cursor-pointer ${(autoConfig.monitoredGroups || []).includes(group.id) ? 'bg-whatsapp border-whatsapp shadow-[0_0_10px_rgba(74,222,128,0.3)]' : 'border-white/20'}`}>
+                                                            {(autoConfig.monitoredGroups || []).includes(group.id) && <CheckCircle2 size={14} className="text-black" />}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-xl bg-whatsapp/10 text-whatsapp font-bold flex items-center justify-center uppercase shrink-0">
+                                                            {group.name.substring(0, 1)}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-white font-bold truncate max-w-[200px]" title={group.name}>{group.name}</p>
+                                                                {group.isBotGroup && <span className="text-[9px] bg-whatsapp/20 text-whatsapp px-1.5 py-0.5 rounded font-black uppercase">BOT</span>}
+                                                            </div>
+                                                            <p className="text-[10px] text-slate-500 truncate italic">ID: {group.id.split('@')[0]}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right">
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="text-white font-bold">{group.participants}</span>
+                                                        <span className="text-[10px] text-slate-500 uppercase tracking-tighter">membros</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleDeleteGroup(group.id, group.name)}
+                                                            className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-xl transition-colors"
+                                                            title={t('groups.deleteTooltip')}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+
+                                        {groups.length === 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="py-20 text-center">
+                                                    <Users size={48} className="mx-auto text-slate-600 mb-4" />
+                                                    <p className="text-slate-500 font-medium">{t('groups.empty')}</p>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -321,20 +376,8 @@ const GroupsTab = ({
                                 </h3>
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={handleRefreshClick}
-                                        disabled={isRefreshing}
-                                        title="Atualizar dados agora"
-                                        className={`flex items-center gap-2 px-3 py-2 border font-bold text-sm rounded-xl transition-all ${refreshDone
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                            : 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 text-blue-400'
-                                            } disabled:opacity-60`}
-                                    >
-                                        <RefreshCw size={14} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
-                                        {isRefreshing ? 'Atualizando...' : refreshDone ? '✓ Atualizado!' : 'Atualizar'}
-                                    </button>
-                                    <button
                                         onClick={exportToCSV}
-                                        disabled={groups.length === 0}
+                                        disabled={analysisData.length === 0}
                                         className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-bold text-sm rounded-xl transition-all disabled:opacity-40"
                                     >
                                         <Download size={16} />
@@ -386,16 +429,8 @@ const GroupsTab = ({
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b border-white/5">
-                                            <th
-                                                className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
-                                                onClick={toggleAllMonitoring}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${(autoConfig.monitoredGroups || []).length === groups.length ? 'bg-whatsapp border-whatsapp' : 'border-white/20'}`}>
-                                                        {(autoConfig.monitoredGroups || []).length === groups.length && <CheckCircle2 size={12} className="text-black" />}
-                                                    </div>
-                                                    Monitorar
-                                                </div>
+                                            <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold">
+                                                Grupo
                                             </th>
                                             <th
                                                 className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
@@ -431,19 +466,12 @@ const GroupsTab = ({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
-                                        {sortedData.map((g) => {
+                                        {sortedData.filter(g => (autoConfig.monitoredGroups || []).includes(g.id)).map((g) => {
                                             const capacityPct = autoConfig?.threshold > 0
                                                 ? Math.min(100, (g.participants / autoConfig.threshold) * 100)
                                                 : Math.min(100, (g.participants / capacityBase) * 100);
                                             return (
-                                                <tr key={g.id} className={`hover:bg-white/5 transition-colors ${!(autoConfig.monitoredGroups || []).includes(g.id) ? 'opacity-50' : ''}`}>
-                                                    <td className="px-4 py-3" onClick={() => toggleMonitoring(g.id)}>
-                                                        <div className="flex items-center justify-center">
-                                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${(autoConfig.monitoredGroups || []).includes(g.id) ? 'bg-whatsapp border-whatsapp shadow-[0_0_10px_rgba(74,222,128,0.3)]' : 'border-white/20'}`}>
-                                                                {(autoConfig.monitoredGroups || []).includes(g.id) && <CheckCircle2 size={14} className="text-black" />}
-                                                            </div>
-                                                        </div>
-                                                    </td>
+                                                <tr key={g.id} className="hover:bg-white/5 transition-colors">
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-7 h-7 rounded-lg bg-whatsapp/10 text-whatsapp text-xs font-bold flex items-center justify-center uppercase shrink-0">
@@ -494,7 +522,6 @@ const GroupsTab = ({
 
                                         {analysisData.length > 0 && (
                                             <tr className="border-t-2 border-white/10 bg-white/5 font-bold">
-                                                <td className="px-4 py-3" />
                                                 <td className="px-4 py-3 text-xs text-slate-400 uppercase">{t('groups.analysis.totalRow')}</td>
                                                 <td className="px-4 py-3 text-right text-white">{totalMembers.toLocaleString('pt-BR')}</td>
                                                 <td className="px-4 py-3 hidden md:table-cell" />
@@ -661,13 +688,32 @@ const GroupsTab = ({
                                 </div>
 
                                 <div className="flex flex-col md:flex-row gap-4 pt-4">
+                                    {hasReachedLimit && (
+                                        <div className="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3">
+                                            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-bold">Limite de Grupos Atingido</p>
+                                                <p className="text-xs opacity-80 mt-1">
+                                                    Seu plano atual permite criar até {groupLimit} grupos administrados pelo bot.
+                                                    Você já possui {botGroupsCount} grupos ativos.
+                                                    Remova um grupo existente ou faça upgrade para criar novos!
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <button
                                         onClick={() => {
+                                            if (hasReachedLimit) {
+                                                addNotification('Limite de grupos atingido para o seu plano!', 'error');
+                                                return;
+                                            }
                                             submitCreation();
                                             setAutoConfig(prev => ({ ...prev, groupDescription: newGroupDesc }));
                                             handleSaveConfig();
                                         }}
-                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20"
+                                        disabled={hasReachedLimit}
+                                        className={`flex-1 flex items-center justify-center gap-2 ${hasReachedLimit ? 'bg-slate-700 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'} text-white font-bold py-4 rounded-xl transition-all shadow-lg`}
                                     >
                                         <Plus size={20} />
                                         {t('groups.modal.createNowBtn')}
@@ -688,8 +734,8 @@ const GroupsTab = ({
                         </div>
                     </motion.div>
                 )}
-            </AnimatePresence>
-        </motion.div>
+            </AnimatePresence >
+        </motion.div >
     );
 };
 

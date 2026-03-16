@@ -24,13 +24,19 @@ const AutomationTab = ({
     const { t } = useTranslation();
     const [activeSubTab, setActiveSubTab] = React.useState('campaigns');
 
+    const isBasicPlan = userPlan && (userPlan.toLowerCase() === 'basic' || userPlan.toLowerCase() === 'teste');
+
     const subTabs = [
         { id: 'campaigns', label: t('scheduled.title') || 'Campanhas', icon: Clock },
-        { id: 'chatbot', label: t('menu.chatbot') || 'Chatbot', icon: MessageSquare },
-        { id: 'smartlink', label: t('automation.smartLink') || 'Link Inteligente', icon: Target },
     ];
 
-    if (userPlan !== 'basic') {
+    if (!isBasicPlan) {
+        subTabs.push({ id: 'chatbot', label: t('menu.chatbot') || 'Chatbot', icon: MessageSquare });
+    }
+
+    subTabs.push({ id: 'smartlink', label: t('automation.smartLink') || 'Link Inteligente', icon: Target });
+
+    if (!isBasicPlan) {
         subTabs.push({ id: 'cleanup', label: t('automation.filtersAndCleanup') || 'Limpeza', icon: Trash2 });
     }
 
@@ -74,7 +80,7 @@ const AutomationTab = ({
                         className="w-full"
                     >
                         <ScheduledMessages
-                            groups={groups}
+                            groups={groups.filter(g => (autoConfig?.monitoredGroups || []).includes(g.id))}
                             scheduledMessages={scheduledMessages}
                             onAdd={onAddScheduled}
                             onEdit={onEditScheduled}

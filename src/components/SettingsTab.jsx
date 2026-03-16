@@ -4,7 +4,7 @@ import { QrCode, CheckCircle2, AlertCircle, ShoppingBag, Save, User } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import ProfileTab from './ProfileTab';
 
-const SettingsTab = ({ status, qrCode, handleLogout, config, onSaveConfig, userEmail, userName, API_URL, addNotification }) => {
+const SettingsTab = ({ status, qrCode, handleLogout, config, onSaveConfig, userEmail, userName, API_URL, addNotification, userPlan }) => {
     const { t } = useTranslation();
     const [activeSubTab, setActiveSubTab] = React.useState('connection');
     const [mlConfig, setMlConfig] = React.useState({
@@ -20,11 +20,15 @@ const SettingsTab = ({ status, qrCode, handleLogout, config, onSaveConfig, userE
         });
     };
 
-    const subTabs = [
+    let subTabs = [
         { id: 'connection', label: 'WhatsApp', icon: QrCode },
         { id: 'profile', label: t('menu.profile'), icon: User },
         { id: 'integrations', label: 'Mercado Livre', icon: ShoppingBag },
     ];
+
+    if (userPlan === 'basic') {
+        subTabs = subTabs.filter(tab => tab.id !== 'integrations');
+    }
 
     return (
         <motion.div

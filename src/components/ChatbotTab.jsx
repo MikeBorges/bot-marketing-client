@@ -48,7 +48,7 @@ const ChatbotTab = ({ socket, status }) => {
         const handleBotResponse = (data) => {
             setIsTyping(false);
             setMessages(prev => [...prev, {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 from: 'bot',
                 text: data.text || data,
                 image: data.image || null,
@@ -66,7 +66,7 @@ const ChatbotTab = ({ socket, status }) => {
         const handleError = (errorMsg) => {
             setIsTyping(false);
             setMessages(prev => [...prev, {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 from: 'bot',
                 text: `❌ Erro: ${errorMsg}`,
                 time: new Date()
@@ -88,7 +88,7 @@ const ChatbotTab = ({ socket, status }) => {
         if (status === 'Desconectado') {
             setMessages([
                 {
-                    id: Date.now(),
+                    id: Date.now() + Math.random(),
                     from: 'bot',
                     text: '👋 Conexão resetada. Digite um comando para começar.',
                     time: new Date()
@@ -103,7 +103,7 @@ const ChatbotTab = ({ socket, status }) => {
 
         // Adicionar mensagem do usuário
         setMessages(prev => [...prev, {
-            id: Date.now(),
+            id: Date.now() + Math.random(),
             from: 'user',
             text,
             time: new Date()
@@ -145,7 +145,7 @@ const ChatbotTab = ({ socket, status }) => {
 
     const clearChat = () => {
         const initialMsg = [{
-            id: Date.now(),
+            id: Date.now() + Math.random(),
             from: 'bot',
             text: `🧹 Conversa limpa!`,
             time: new Date()

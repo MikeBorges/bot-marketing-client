@@ -68,7 +68,7 @@ const AuthPage = ({ onLogin }) => {
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 mb-4 shadow-xl shadow-purple-600/20">
                         <Lock className="text-white" size={32} />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">BotManager</h1>
+                    <h1 className="text-3xl font-bold text-white mb-2">OffeHub</h1>
                     <p className="text-slate-400">Gerenciamento inteligente de automação</p>
                 </div>
 
@@ -173,7 +173,7 @@ const AuthPage = ({ onLogin }) => {
 
                 <div className="mt-8 text-center">
                     <p className="text-slate-500 text-sm">
-                        &copy; 2024 BotManager. Todos os direitos reservados.
+                        &copy; 2024 OffeHub. Todos os direitos reservados.
                     </p>
                 </div>
             </motion.div>
