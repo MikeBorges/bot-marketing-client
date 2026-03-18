@@ -27,7 +27,7 @@ import GroupsTab from './components/GroupsTab';
 import AnalysisTab from './components/AnalysisTab';
 import AccountSwitcher from './components/AccountSwitcher';
 import SettingsTab from './components/SettingsTab';
-import ProfileTab from './components/ProfileTab';
+import ProfileTab from './components/ProfileTab'; // HMR Trigger
 import ScheduledMessages from './components/ScheduledMessages';
 import MercadoLivreTab from './components/MercadoLivreTab';
 import ChatbotTab from './components/ChatbotTab';
@@ -48,20 +48,25 @@ const socket = io(API_URL, {
   autoConnect: false // Vamos conectar manualmente após login/carregamento
 });
 
-const Toast = ({ message, type, onClose }) => (
-  <motion.div
-    initial={{ opacity: 0, x: 50, scale: 0.8 }}
-    animate={{ opacity: 1, x: 0, scale: 1 }}
-    exit={{ opacity: 0, x: 20, scale: 0.8 }}
-    className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border ${type === 'success'
-      ? 'bg-whatsapp/20 border-whatsapp/30 text-whatsapp'
-      : 'bg-red-500/20 border-red-500/30 text-red-400'
-      }`}
-  >
-    {type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-    <span className="font-medium">{message}</span>
-  </motion.div>
-);
+const Toast = React.memo(({ message, type, onClose }) => {
+  const colorClass = type === 'success'
+    ? 'bg-whatsapp/20 border-whatsapp/30 text-whatsapp'
+    : type === 'info'
+      ? 'bg-blue-500/20 border-blue-500/30 text-blue-400'
+      : 'bg-red-500/20 border-red-500/30 text-red-400';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 50, scale: 0.8 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 20, scale: 0.8 }}
+      className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border ${colorClass}`}
+    >
+      {type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+      <span className="font-medium">{message}</span>
+    </motion.div>
+  );
+});
 
 const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
   const { t } = useTranslation();
@@ -120,12 +125,64 @@ function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'user');
-  const [userPlan, setUserPlan] = useState(localStorage.getItem('userPlan') || 'teste');
+  const [userPlan, setUserPlan] = useState(localStorage.getItem('userPlan') || 'expired');
+  const [planExpiresAt, setPlanExpiresAt] = useState(localStorage.getItem('planExpiresAt') || null);
 
   // Broadcasts
   const [broadcasts, setBroadcasts] = useState([]);
   const [unreadBroadcasts, setUnreadBroadcasts] = useState(0);
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState(null);
+
+  const syncUser = async (email) => {
+    if (!email) return;
+    try {
+      const response = await fetch(`${API_URL}/auth/me?email=${email}`);
+      const data = await response.json();
+      if (response.ok && data.user) {
+        setUserRole(data.user.role);
+        setUserPlan(data.user.plan);
+        setPlanExpiresAt(data.user.plan_expires_at);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userPlan', data.user.plan);
+        localStorage.setItem('planExpiresAt', data.user.plan_expires_at || '');
+      }
+    } catch (err) {
+      console.error('[App] Error syncing user:', err);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    
+    if (isAuthenticated && userEmail) {
+      syncUser(userEmail);
+    }
+
+    if (paymentStatus === 'success') {
+      addNotification('Pagamento confirmado! Seu plano será atualizado em instantes.', 'success');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      if (userEmail) syncUser(userEmail);
+    } else if (paymentStatus === 'failure') {
+      addNotification('O pagamento não foi concluído. Tente novamente.', 'error');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // Alerta de expiração iminente (Toast)
+  useEffect(() => {
+    if (isAuthenticated && planExpiresAt && !isPlanExpired()) {
+      const days = getDaysRemaining();
+      if (days !== null && days <= 5) {
+        // Pequeno delay para não bugar com outros toasts de login
+        const timer = setTimeout(() => {
+          addNotification(`Atenção: Seu plano expira em ${days} ${days === 1 ? 'dia' : 'dias'}. Renove agora para não perder o acesso!`, 'info');
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isAuthenticated, planExpiresAt]);
 
   useEffect(() => {
     if (isAuthenticated && userEmail) {
@@ -157,11 +214,11 @@ function App() {
 
 
   const addNotification = (message, type = 'success') => {
-    const id = Date.now() + Math.random();
+    const id = `${Date.now()}-${Math.random()}`;
     setNotifications(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 4000);
+    }, 4500);
   };
 
   useEffect(() => {
@@ -344,11 +401,14 @@ function App() {
     setShowAuth(false);
     setUserEmail('');
     setUserRole('user');
-    setUserPlan('basic');
+    setUserPlan('expired');
+    setPlanExpiresAt(null);
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userPlan');
+    localStorage.removeItem('planExpiresAt');
     localStorage.removeItem('chatbot_history');
 
     // 3. Reseta TODO o estado do painel (Isolamento de Dados)
@@ -562,15 +622,28 @@ function App() {
     });
   };
 
-  const handleBulkRemarketingMessage = () => {
+  const handleBulkRemarketingMessage = async () => {
     if (selectedLeads.size === 0 || !bulkRemarketingModal.text) return;
-    const selectedLeadsList = leads.filter(l => selectedLeads.has(l.number));
-    selectedLeadsList.forEach(lead => {
-      socket.emit('send_private_message', { number: lead.number, text: bulkRemarketingModal.text });
-    });
+    
+    addNotification(`Iniciando disparos para ${selectedLeads.size} leads com intervalo randomizado...`, 'info');
     setBulkRemarketingModal({ isOpen: false, text: '' });
-    setSelectedLeads(new Set());
-    addNotification(`Mensagem enviada para ${selectedLeadsList.length} leads!`, 'success');
+    
+    const selectedLeadsList = leads.filter(l => selectedLeads.has(l.number));
+    setSelectedLeads(new Set()); // Limpa de imediato as caixinhas
+
+    let count = 0;
+    for (const lead of selectedLeadsList) {
+      socket.emit('send_private_message', { number: lead.number, text: bulkRemarketingModal.text });
+      count++;
+      
+      // Delay de 1 a 3 segundos entre mensagens, para não tomar ban rápido
+      if (count < selectedLeadsList.length) {
+          const delay = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
+          await new Promise(res => setTimeout(res, delay));
+      }
+    }
+    
+    addNotification(`Disparo em massa concluído para ${count} leads!`, 'success');
   };
 
   const toggleLeadSelection = (number) => {
@@ -602,7 +675,7 @@ function App() {
   ];
 
   // Restrição de Plano Básico
-  const isBasicPlan = userPlan && (userPlan.toLowerCase() === 'basic' || userPlan.toLowerCase() === 'teste');
+  const isBasicPlan = userRole !== 'super_admin' && userPlan && (userPlan.toLowerCase() === 'basic' || userPlan.toLowerCase() === 'teste');
 
   if (isBasicPlan) {
     menuItems = menuItems.filter(item =>
@@ -614,20 +687,149 @@ function App() {
     menuItems.splice(menuItems.length - 1, 0, { id: 'admin', icon: ShieldCheck, label: 'Administração' });
   }
 
-  if (!isAuthenticated) {
-    if (showAuth) {
-      return <AuthPage onLogin={(user) => {
+  const handlePaymentCheckout = async (planId, email, name) => {
+    console.log('[App] handlePaymentCheckout called with:', { planId, email, name });
+    try {
+      const response = await fetch(`${API_URL}/payments/create-preference`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId, userEmail: email, userName: name })
+      });
+      const data = await response.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        addNotification('Erro ao gerar pagamento. Tente novamente.', 'error');
+      }
+    } catch (error) {
+      console.error('Erro no checkout:', error);
+      addNotification('Erro de conexão com o servidor.', 'error');
+    }
+  };
+
+  const handleGetStarted = (planId) => {
+    let id = typeof planId === 'string' ? planId : null;
+    
+    // Se o usuário já está logado e o plano for um botão genérico (null ou 'basic')
+    // tentamos recuperar o plano dele via estado ou localStorage (para evitar latência no login)
+    if (isAuthenticated && (!id || id === 'basic')) {
+      const currentStoredPlan = localStorage.getItem('userPlan');
+      const actualPlan = (userPlan && userPlan !== 'expired' && userPlan !== 'none') ? userPlan : currentStoredPlan;
+      
+      if (actualPlan && actualPlan !== 'expired' && actualPlan !== 'none') {
+        console.log('[App] Usando plano recuperado para renovação:', actualPlan);
+        id = actualPlan;
+      }
+    }
+
+    console.log('[App] handleGetStarted with final plan:', id);
+    
+    // Isenta administradores de pagamento
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      setActiveTab('dashboard');
+      return;
+    }
+
+    // Se o plano NÃO estiver expirado e o usuário estiver logado, entra direto
+    if (isAuthenticated && !isPlanExpired()) {
+      setActiveTab('dashboard');
+      return;
+    }
+
+    if (isAuthenticated) {
+      handlePaymentCheckout(id, userEmail, localStorage.getItem('userName') || userEmail);
+    } else {
+      setPendingPlan(id);
+      setShowAuth(true);
+    }
+  };
+
+  const isPlanExpired = () => {
+    // Normaliza o role para evitar erros de tipagem ou espaços
+    const role = (userRole || localStorage.getItem('userRole') || 'user').toLowerCase().trim();
+    
+    // Admins e Super Admins nunca expiram
+    if (role === 'super_admin' || role === 'admin') {
+      return false;
+    }
+    
+    // Se não houver data de expiração, é considerado expirado (novo usuário ou não pago)
+    if (!planExpiresAt || planExpiresAt === '') {
+      return true;
+    }
+
+    const expireDate = new Date(planExpiresAt);
+    if (isNaN(expireDate.getTime())) {
+      return true;
+    }
+
+    // Retorna true se a data atual for maior que a data de expiração
+    return new Date() > expireDate;
+  };
+
+  const getDaysRemaining = () => {
+    if (!planExpiresAt || isPlanExpired()) return null;
+    const expireDate = new Date(planExpiresAt);
+    const diffTime = expireDate - new Date();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  if (!isAuthenticated || isPlanExpired()) {
+    if (showAuth && !isAuthenticated) {
+      return <AuthPage 
+        defaultTab={pendingPlan ? 'register' : 'login'}
+        onLogin={(user) => {
         setIsAuthenticated(true);
         setUserEmail(user.email);
         setUserRole(user.role);
         setUserPlan(user.plan);
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('userEmail', user.email);
+        localStorage.setItem('userName', user.name);
         localStorage.setItem('userRole', user.role);
         localStorage.setItem('userPlan', user.plan);
+        localStorage.setItem('planExpiresAt', user.plan_expires_at || '');
+        
+        setPlanExpiresAt(user.plan_expires_at);
+        
+        console.log('[App] Auth success. Role:', user.role, 'Pending plan:', pendingPlan);
+        
+        // Verifica se o usuário que logou já tem um plano válido
+        const loginPlanExpired = () => {
+          if (user.role === 'admin' || user.role === 'super_admin') return false;
+          if (!user.plan_expires_at) return true;
+          return new Date() > new Date(user.plan_expires_at);
+        };
+
+        // Se o plano pendente for o básico (padrão de botões de "Começar")
+        // mas o usuário já tiver um plano superior no banco de dados, usamos o dele.
+        let finalPlan = pendingPlan;
+        if (finalPlan === 'basic' && user.plan && user.plan !== 'expired' && user.plan !== 'basic') {
+          console.log('[App] Ajustando plano pendente para o plano atual do usuário:', user.plan);
+          finalPlan = user.plan;
+        }
+
+        if (finalPlan && loginPlanExpired()) {
+          console.log('[App] Initiating checkout for:', finalPlan);
+          handlePaymentCheckout(finalPlan, user.email, user.name);
+          setPendingPlan(null);
+        } else {
+          setPendingPlan(null);
+          // Redireciona para escolher o plano caso tenha acabado de se cadastrar e não escolheu nada prévio!
+          if (loginPlanExpired()) {
+            setTimeout(() => {
+              document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+          }
+        }
       }} />;
     }
-    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+    return <LandingPage 
+      onGetStarted={handleGetStarted} 
+      isAuthenticated={isAuthenticated}
+      onLogout={handleSystemLogout}
+    />;
   }
 
   return (
@@ -645,28 +847,37 @@ function App() {
 
         <div className="mb-5">
           <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-1" style={{ color: 'var(--text-muted)' }}>{t('app.activeAccount')}</p>
-          <AccountSwitcher
-            accounts={accounts}
-            activeAccountId={activeAccountId}
-            onSwitch={handleSwitchAccount}
-            onAdd={handleAddAccount}
-            onRename={handleRenameAccount}
-            onRemove={handleRemoveAccount}
-          />
+          <div className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+             <span className="text-sm font-bold text-white truncate">{accounts.find(a => a.id === activeAccountId)?.name || 'Principal'}</span>
+             <span className="text-[10px] uppercase font-bold text-slate-500 bg-black/20 px-2 py-0.5 rounded">Padrão</span>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className="nav-item w-full"
-              style={activeTab === item.id ? { background: 'var(--accent-soft)', border: '1px solid var(--accent-border)', color: 'var(--text-primary)' } : {}}
-            >
-              <item.icon size={16} style={{ color: activeTab === item.id ? 'var(--accent)' : 'inherit' }} />
-              <span>{item.label}</span>
-            </button>
-          ))}
+          {menuItems.map((item) => {
+            const isExpired = isPlanExpired();
+            const isBlocked = isExpired && item.id !== 'config';
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (isBlocked) {
+                    addNotification('Acesso expirado. Realize o pagamento para liberar as ferramentas.', 'warning');
+                    return;
+                  }
+                  setActiveTab(item.id);
+                }}
+                className={`nav-item w-full ${isBlocked ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
+                style={activeTab === item.id ? { background: 'var(--accent-soft)', border: '1px solid var(--accent-border)', color: 'var(--text-primary)' } : {}}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon size={16} style={{ color: activeTab === item.id ? 'var(--accent)' : 'inherit' }} />
+                  <span>{item.label}</span>
+                </div>
+                {isBlocked && <Lock size={12} className="text-slate-500" />}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Bell button for broadcasts */}
@@ -707,6 +918,33 @@ function App() {
                     userPlan === 'basic' ? 'BASIC' : 'TRIAL'}
               </span>
             </div>
+            {planExpiresAt && userRole !== 'super_admin' && (
+              <div className="flex flex-col gap-0.5 mt-1 opacity-80">
+                <span className={`text-[9px] font-bold uppercase tracking-wider ${isPlanExpired() ? 'text-red-400' : 'text-slate-400'}`}>
+                  {isPlanExpired() ? 'Acesso Expirado:' : 'Válido até:'}
+                </span>
+                <span className={`text-[9px] font-mono font-bold ${isPlanExpired() ? 'text-red-300' : 'text-slate-300'}`}>
+                  {new Date(planExpiresAt).toLocaleDateString('pt-BR')}
+                </span>
+                {!isPlanExpired() && getDaysRemaining() !== null && getDaysRemaining() <= 5 && (
+                  <div className="mt-2 p-2 rounded bg-amber-500/10 border border-amber-500/20 text-center animate-pulse">
+                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-tighter">
+                      Expira em {getDaysRemaining()} {getDaysRemaining() === 1 ? 'dia' : 'dias'}!
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            {!planExpiresAt && userPlan === 'expired' && userRole !== 'super_admin' && (
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider underline">Plano Expirado</span>
+              </div>
+            )}
+            {userRole === 'super_admin' && (
+              <div className="flex items-center gap-1.5 mt-1 opacity-60">
+                <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Acesso Vitalício</span>
+              </div>
+            )}
           </div>
 
           <button
@@ -958,6 +1196,18 @@ function App() {
                 qrCode={qrCode}
                 handleLogout={handleLogout}
                 userPlan={userPlan}
+                userRole={userRole}
+                userEmail={userEmail}
+                userName={localStorage.getItem('userName') || userEmail}
+                planExpiresAt={planExpiresAt}
+                onRenewPlan={() => handlePaymentCheckout(userPlan || 'basic', userEmail, localStorage.getItem('userName') || userEmail)}
+                API_URL={API_URL}
+                addNotification={addNotification}
+                config={autoConfig}
+                onSaveConfig={(newConfig) => {
+                  socket.emit('update_config', { ...newConfig, imageData: imagePreview });
+                  addNotification(t('toast.configSaved'), 'success');
+                }}
               />
             )}
 
@@ -1005,6 +1255,7 @@ function App() {
                 userRole={userRole}
                 addNotification={addNotification}
                 socket={socket}
+                planExpiresAt={planExpiresAt}
               />
             )}
 

@@ -4,7 +4,9 @@ import { QrCode, CheckCircle2, AlertCircle, ShoppingBag, Save, User } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import ProfileTab from './ProfileTab';
 
-const SettingsTab = ({ status, qrCode, handleLogout, config, onSaveConfig, userEmail, userName, API_URL, addNotification, userPlan }) => {
+const SettingsTab = (props) => {
+    console.log('[SettingsTab] Full Props:', props);
+    const { onRenewPlan, status, qrCode, handleLogout, config, onSaveConfig, userEmail, userName, API_URL, addNotification, userPlan, planExpiresAt, userRole } = props;
     const { t } = useTranslation();
     const [activeSubTab, setActiveSubTab] = React.useState('connection');
     const [mlConfig, setMlConfig] = React.useState({
@@ -129,6 +131,9 @@ const SettingsTab = ({ status, qrCode, handleLogout, config, onSaveConfig, userE
                         <ProfileTab
                             userEmail={userEmail}
                             userName={userName}
+                            planExpiresAt={planExpiresAt}
+                            userRole={userRole}
+                            onRenewPlan={props.onRenewPlan}
                             API_URL={API_URL}
                             addNotification={addNotification}
                         />

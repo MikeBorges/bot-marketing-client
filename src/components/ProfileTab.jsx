@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Mail, Phone, Lock, Save, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Phone, Lock, Save, Loader2, CheckCircle2, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ProfileTab = ({ userEmail, userName, API_URL, addNotification }) => {
+const ProfileTab = ({ userEmail, userName, planExpiresAt, userRole, onRenewPlan, API_URL, addNotification }) => {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -13,6 +13,8 @@ const ProfileTab = ({ userEmail, userName, API_URL, addNotification }) => {
         email: userEmail || '',
         password: ''
     });
+
+    const isSuperAdmin = userRole === 'super_admin';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -63,8 +65,54 @@ const ProfileTab = ({ userEmail, userName, API_URL, addNotification }) => {
         }
     };
 
+    const formatDate = (dateString) => {
+        if (isSuperAdmin) return 'Vitalício';
+        if (!dateString) return 'Indefinido';
+        return new Date(dateString).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     return (
         <div className="space-y-6">
+            {/* Plan Info Chip */}
+            <div className="p-4 rounded-2xl flex items-center justify-between border" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: isSuperAdmin ? 'rgba(124,111,255,0.1)' : 'rgba(52,211,153,0.1)', color: isSuperAdmin ? 'var(--accent)' : 'var(--mint)' }}>
+                        <CheckCircle2 size={20} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Status da Assinatura</p>
+                        <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{isSuperAdmin ? 'Acesso Administrativo' : 'Plano Ativo'}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{isSuperAdmin ? 'Assinatura' : 'Expira em'}</p>
+                        <p className="text-sm font-mono font-bold" style={{ color: isSuperAdmin || !planExpiresAt ? 'var(--mint)' : 'var(--accent)' }}>
+                            {formatDate(planExpiresAt)}
+                        </p>
+                    </div>
+                    {!isSuperAdmin && (
+                        <button
+                            onClick={onRenewPlan}
+                            className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-lg shadow-purple-600/20 active:scale-95 flex items-center gap-2"
+                        >
+                            <ShoppingBag size={14} />
+                            Renovar
+                        </button>
+                    ) || (
+                        <div className="absolute opacity-0 pointer-events-none">
+                            {/* Dummy reference to ShoppingBag if needed, but imported in SettingsTab */}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <form onSubmit={handleSubmit} className="md:col-span-2 space-y-4">
                     <div className="space-y-5">

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, RefreshCw, LogIn, UserPlus } from 'lucide-react';
 
-const AuthPage = ({ onLogin }) => {
-    const [activeTab, setActiveTab] = useState('login'); // 'login', 'register', 'recovery'
+const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
+    const [activeTab, setActiveTab] = useState(defaultTab); // 'login', 'register', 'recovery'
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -29,23 +29,22 @@ const AuthPage = ({ onLogin }) => {
             });
 
             const data = await response.json();
+            console.log(`[Auth] Response from ${endpoint}:`, data);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Erro na autenticação');
             }
 
-            if (activeTab === 'login') {
+            if (activeTab === 'login' || activeTab === 'register') {
+                console.log('[Auth] Calling onLogin with:', data.user);
                 onLogin(data.user);
-            } else if (activeTab === 'register') {
-                setError('Conta criada com sucesso! Faça login.');
-                setActiveTab('login');
             } else {
                 setError('Instruções de recuperação enviadas para o seu e-mail.');
             }
         } catch (err) {
             setError(err.message || 'Ocorreu um erro. Tente novamente.');
         } finally {
-            if (activeTab !== 'login') setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -75,9 +74,16 @@ const AuthPage = ({ onLogin }) => {
                 <div className="glass-card p-8 border-white/10 shadow-2xl">
                     <div className="flex bg-white/5 p-1 rounded-xl mb-8">
                         <button
-                            className="flex-1 py-2 px-4 rounded-lg text-sm font-bold bg-purple-600 text-white shadow-lg shadow-purple-600/20"
+                            onClick={() => setActiveTab('login')}
+                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'login' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-white'}`}
                         >
                             Login
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('register')}
+                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'register' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Registrar
                         </button>
                     </div>
 
@@ -147,7 +153,7 @@ const AuthPage = ({ onLogin }) => {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className={`p-4 rounded-xl text-xs font-bold ${error.includes('enviadas') ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                                className={`p-4 rounded-xl text-xs font-bold ${error.includes('enviadas') || error.includes('sucesso') ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'
                                     }`}
                             >
                                 {error}
@@ -169,6 +175,24 @@ const AuthPage = ({ onLogin }) => {
                             )}
                         </button>
                     </form>
+                    
+                    <div className="mt-6 text-center">
+                        {activeTab === 'login' ? (
+                            <button 
+                                onClick={() => setActiveTab('register')}
+                                className="text-sm text-slate-400 hover:text-purple-400 transition-colors"
+                            >
+                                Não tem uma conta? <span className="font-bold">Registre-se agora</span>
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={() => setActiveTab('login')}
+                                className="text-sm text-slate-400 hover:text-purple-400 transition-colors"
+                            >
+                                Já tem uma conta? <span className="font-bold">Faça login</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="mt-8 text-center">

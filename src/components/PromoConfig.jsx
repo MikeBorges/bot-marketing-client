@@ -6,7 +6,7 @@ import EmojiPicker, { Theme } from 'emoji-picker-react';
 const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
     const { t } = useTranslation();
     const [couponInput, setCouponInput] = useState('');
-    const [couponDetails, setCouponDetails] = useState({ discount: '', minPurchase: '', validity: '' });
+    const [couponDetails, setCouponDetails] = useState({ discount: '', minPurchase: '', validity: '', maxDiscount: '' });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingIndex, setEditingIndex] = useState(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -31,19 +31,20 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
             setEditingIndex(index);
             if (typeof cp === 'string') {
                 setCouponInput(cp);
-                setCouponDetails({ discount: '', minPurchase: '', validity: '' });
+                setCouponDetails({ discount: '', minPurchase: '', validity: '', maxDiscount: '' });
             } else {
                 setCouponInput(cp.code);
                 setCouponDetails({
                     discount: cp.discount || '',
                     minPurchase: cp.minPurchase || '',
-                    validity: cp.validity || ''
+                    validity: cp.validity || '',
+                    maxDiscount: cp.maxDiscount || ''
                 });
             }
         } else {
             setEditingIndex(null);
             setCouponInput('');
-            setCouponDetails({ discount: '', minPurchase: '', validity: '' });
+            setCouponDetails({ discount: '', minPurchase: '', validity: '', maxDiscount: '' });
         }
         setIsModalOpen(true);
     };
@@ -238,7 +239,7 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                             placeholder="Sua mensagem..."
                         />
                         <div className="flex flex-wrap gap-2">
-                            {['{titulo}', '{precoOriginal}', '{precoPromo}', '{cupom}', '{cupom_desconto}', '{cupom_minimo}', '{cupom_validade}', '{link}'].map(tag => (
+                            {['{titulo}', '{precoOriginal}', '{precoPromo}', '{cupom}', '{cupom_desconto}', '{cupom_minimo}', '{cupom_maximo}', '{cupom_validade}', '{link}'].map(tag => (
                                 <button
                                     key={tag}
                                     type="button"
@@ -362,6 +363,16 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                                             value={couponDetails.validity}
                                             onChange={(e) => setCouponDetails({ ...couponDetails, validity: e.target.value })}
                                             placeholder="Ex: Expira hoje"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-whatsapp/50 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Desconto Máximo</label>
+                                        <input
+                                            type="text"
+                                            value={couponDetails.maxDiscount}
+                                            onChange={(e) => setCouponDetails({ ...couponDetails, maxDiscount: e.target.value })}
+                                            placeholder="Ex: R$ 50"
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-whatsapp/50 transition-all"
                                         />
                                     </div>

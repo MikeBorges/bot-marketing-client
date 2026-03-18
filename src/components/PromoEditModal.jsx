@@ -6,13 +6,25 @@ import { X, Image as ImageIcon, Tag, Send } from 'lucide-react';
 const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
     const { t } = useTranslation();
 
+    const [customTitleInput, setCustomTitleInput] = useState('');
     const [originalPriceInput, setOriginalPriceInput] = useState('');
+    const [promoPriceInput, setPromoPriceInput] = useState('');
+    const [freightInput, setFreightInput] = useState('');
+    const [installmentsInput, setInstallmentsInput] = useState(1);
+    const [interestFree, setInterestFree] = useState(true);
+
     const [selectedCoupon, setSelectedCoupon] = useState('');
     const [imagePreview, setImagePreview] = useState('');
 
     useEffect(() => {
         if (isOpen && editData) {
+            setCustomTitleInput(editData.product?.title || '');
             setOriginalPriceInput(editData.suggestedOriginalPrice?.toString() || '');
+            setPromoPriceInput(editData.product?.price?.toString() || '');
+            setFreightInput('');
+            setInstallmentsInput(editData.product?.installments || 12);
+            setInterestFree(true);
+
             const rawCoupon = editData.config?.coupons?.[0] || '';
             // Extrai o code se for objeto, ou usa a string diretamente
             const defaultCoupon = typeof rawCoupon === 'object' ? rawCoupon.code : rawCoupon;
@@ -50,9 +62,16 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
     const handleGenerate = () => {
         onGenerate({
             url: editData.url,
-            productData: editData.product,
+            productData: {
+                ...editData.product,
+                title: customTitleInput.trim() || editData.product.title
+            },
             customImageBase64: imagePreview !== editData.product?.image ? imagePreview : null,
             customOriginalPrice: parseFloat(originalPriceInput || editData.suggestedOriginalPrice),
+            customPromoPrice: parseFloat(promoPriceInput || editData.product?.price),
+            customInstallments: installmentsInput,
+            freight: freightInput.trim(),
+            interestFree: interestFree,
             coupon: selectedCoupon
         });
         onClose();
@@ -108,19 +127,88 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                             </p>
                         </div>
 
-                        {/* Preço De */}
+                        {/* Nome do Produto */}
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase">Preço "De" (R$)</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase">Nome do Produto</label>
                             <input
-                                type="number"
-                                step="0.01"
-                                value={originalPriceInput}
-                                onChange={(e) => setOriginalPriceInput(e.target.value)}
+                                type="text"
+                                value={customTitleInput}
+                                onChange={(e) => setCustomTitleInput(e.target.value)}
                                 className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
                             />
-                            <p className="text-[10px] text-slate-500 flex justify-between">
-                                <span>Preço de Venda real: <strong className="text-white">R$ {editData.product?.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
-                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Preço De */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase">Preço "De" (R$)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={originalPriceInput}
+                                    onChange={(e) => setOriginalPriceInput(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
+                                />
+                                <p className="text-[10px] text-slate-500">
+                                    Preço original gerado.
+                                </p>
+                            </div>
+
+                            {/* Preço Por */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase">Preço "Por" (R$)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={promoPriceInput}
+                                    onChange={(e) => setPromoPriceInput(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
+                                />
+                                <p className="text-[10px] text-slate-500 flex justify-between">
+                                    <span>Real: <strong className="text-white">R$ {editData.product?.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Qtd Parcelas */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase">Qtd Parcelas</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="24"
+                                    value={installmentsInput}
+                                    onChange={(e) => setInstallmentsInput(parseInt(e.target.value) || 1)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
+                                />
+                            </div>
+
+                            {/* Tipo de Frete */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase">Tipo de Frete</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ex: Grátis"
+                                    value={freightInput}
+                                    onChange={(e) => setFreightInput(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Com Juros / Sem Juros */}
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="interestFree"
+                                checked={interestFree}
+                                onChange={(e) => setInterestFree(e.target.checked)}
+                                className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
+                            />
+                            <label htmlFor="interestFree" className="text-sm text-slate-300 font-bold cursor-pointer">
+                                Parcelamento SEM Juros?
+                            </label>
                         </div>
 
                         {/* Cupom */}

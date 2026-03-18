@@ -14,9 +14,13 @@ const SupportTicketTab = ({ socket, addNotification }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!message.trim()) return;
+        if (!message.trim() || sending) return;
         setSending(true);
-        const handleResponse = (res) => {
+        
+        // Remove listener anterior se existir (segurança extra)
+        socket.off('support_ticket_sent');
+
+        socket.once('support_ticket_sent', (res) => {
             if (res.success) {
                 addNotification(t('support.success') || 'Mensagem enviada!', 'success');
                 setMessage('');
@@ -24,9 +28,8 @@ const SupportTicketTab = ({ socket, addNotification }) => {
                 addNotification(res.error || 'Erro ao enviar.', 'error');
             }
             setSending(false);
-            socket.off('support_ticket_sent', handleResponse);
-        };
-        socket.on('support_ticket_sent', handleResponse);
+        });
+        
         socket.emit('send_support_ticket', { category, message });
     };
 

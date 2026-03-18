@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, User, Crown, AlertCircle, MessageCircle, Eye, Trash2, Megaphone, Send, X } from 'lucide-react';
+import { Shield, User, Crown, AlertCircle, MessageCircle, Eye, Trash2, Megaphone, Send, X, Save, Loader2 } from 'lucide-react';
 
 const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const { t } = useTranslation();
@@ -23,6 +23,8 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const [broadcastSending, setBroadcastSending] = useState(false);
     const [broadcastExpanded, setBroadcastExpanded] = useState(true);
     const [selectSpecific, setSelectSpecific] = useState(false);
+    const [expiryEdits, setExpiryEdits] = useState({});
+    const [updatingExpiryEmail, setUpdatingExpiryEmail] = useState(null);
 
     const [activeSubTab, setActiveSubTab] = useState('users');
 
@@ -88,7 +90,7 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
         };
     }, [socket]);
 
-    const handleUpdateUser = async (targetEmail, updates) => {
+    const handleUpdateUser = async (targetEmail, updates, targetId = null) => {
         // ... (existing logic or placeholder if you want to keep it simple)
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -98,6 +100,7 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                 body: JSON.stringify({
                     requesterEmail: userEmail,
                     targetEmail,
+                    targetId,
                     ...updates
                 })
             });
@@ -275,6 +278,8 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Usuário</th>
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Papel / Cargo</th>
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Plano Atual</th>
+                                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Última Renovação</th>
+                                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Validade</th>
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Ações</th>
                                         </tr>
                                     </thead>
@@ -313,13 +318,49 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                                     <select
                                                         value={u.plan}
                                                         disabled={u.role === 'super_admin'}
-                                                        onChange={(e) => handleUpdateUser(u.email, { newPlan: e.target.value })}
+                                                        onChange={(e) => handleUpdateUser(u.email, { newPlan: e.target.value }, u.id)}
                                                         className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-white focus:outline-none focus:border-purple-500 disabled:opacity-50"
                                                     >
                                                         <option value="pro" className="bg-[#1a1c24]">💎 PRO</option>
                                                         <option value="intermediario" className="bg-[#1a1c24]">🚀 INTERMEDIÁRIO</option>
                                                         <option value="basic" className="bg-[#1a1c24]">⭐ BASIC</option>
                                                     </select>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[10px] font-mono text-slate-400">
+                                                        {u.plan_updated_at ? new Date(u.plan_updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '---'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={expiryEdits[u.email] !== undefined ? expiryEdits[u.email] : (u.plan_expires_at ? new Date(u.plan_expires_at).toISOString().slice(0, 16) : '')}
+                                                            onChange={(e) => setExpiryEdits(prev => ({ ...prev, [u.email]: e.target.value }))}
+                                                            disabled={u.role === 'super_admin'}
+                                                            className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-mono text-white focus:outline-none focus:border-purple-500 disabled:opacity-50"
+                                                        />
+                                                        {expiryEdits[u.email] !== undefined && (
+                                                            <button
+                                                                onClick={async () => {
+                                                                    setUpdatingExpiryEmail(u.email);
+                                                                    const newVal = expiryEdits[u.email] ? new Date(expiryEdits[u.email]).toISOString() : null;
+                                                                    await handleUpdateUser(u.email, { newPlanExpiresAt: newVal }, u.id);
+                                                                    setExpiryEdits(prev => {
+                                                                        const copy = { ...prev };
+                                                                        delete copy[u.email];
+                                                                        return copy;
+                                                                    });
+                                                                    setUpdatingExpiryEmail(null);
+                                                                }}
+                                                                disabled={updatingExpiryEmail === u.email}
+                                                                className="p-1.5 bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/30 transition-all shadow-lg shadow-emerald-500/10 disabled:opacity-50"
+                                                                title="Confirmar e Salvar Validade"
+                                                            >
+                                                                {updatingExpiryEmail === u.email ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {userRole === 'super_admin' && u.role !== 'super_admin' && (

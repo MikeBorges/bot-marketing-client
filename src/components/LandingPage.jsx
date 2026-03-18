@@ -15,7 +15,7 @@ import {
     X
 } from 'lucide-react';
 
-const LandingPage = ({ onGetStarted }) => {
+const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
     const features = [
         {
             title: "WhatsApp Multicontas",
@@ -52,6 +52,24 @@ const LandingPage = ({ onGetStarted }) => {
             desc: "Sistemas inteligentes de delay e proteção para manter suas contas seguras e saudáveis.",
             icon: Shield,
             color: "#22c55e"
+        },
+        {
+            title: "Links Inteligentes",
+            desc: "Redirecione leads automaticamente para os grupos com vagas disponíveis, maximizando recursos.",
+            icon: Globe,
+            color: "#f59e0b"
+        },
+        {
+            title: "Atendimento Rápido",
+            desc: "Envie mensagens individuais em massa para remarketing ou atenda diretamente pela plataforma.",
+            icon: MessageSquare,
+            color: "#ec4899"
+        },
+        {
+            title: "Gerador de Promoções",
+            desc: "Crie cartões promocionais atrativos para seus produtos em segundos para enviar aos grupos.",
+            icon: Target,
+            color: "#14b8a6"
         }
     ];
 
@@ -77,14 +95,25 @@ const LandingPage = ({ onGetStarted }) => {
                         <a href="#features" className="hover:text-white transition-colors">Funcionalidades</a>
                         <a href="#how-it-works" className="hover:text-white transition-colors">Como Funciona</a>
                         <a href="#plans" className="hover:text-white transition-colors">Planos</a>
+                        <a href="#contacts" className="hover:text-white transition-colors">Contatos</a>
                     </div>
 
-                    <button
-                        onClick={onGetStarted}
-                        className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold text-sm transition-all shadow-lg shadow-purple-600/20 active:scale-95"
-                    >
-                        Entrar no Dashboard
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {isAuthenticated && (
+                            <button
+                                onClick={onLogout}
+                                className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-red-400 font-bold text-sm hover:bg-red-500/10 transition-all transition-all shadow-lg active:scale-95"
+                            >
+                                Sair
+                            </button>
+                        )}
+                        <button
+                            onClick={() => onGetStarted(null)}
+                            className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold text-sm transition-all shadow-lg shadow-purple-600/20 active:scale-95"
+                        >
+                            {isAuthenticated ? 'Ver Dashboard' : 'Entrar no Dashboard'}
+                        </button>
+                    </div>
                 </div>
             </nav>
 
@@ -112,10 +141,10 @@ const LandingPage = ({ onGetStarted }) => {
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <button
-                                onClick={onGetStarted}
+                                onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
                                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-black font-extrabold text-base hover:scale-105 transition-all flex items-center justify-center gap-2 group shadow-xl shadow-white/10"
                             >
-                                Começar Agora Grátis
+                                Adquira Agora
                                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                             <button className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-base hover:bg-white/10 transition-all flex items-center justify-center gap-2">
@@ -242,7 +271,6 @@ const LandingPage = ({ onGetStarted }) => {
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
                                 {[
-                                    "1 Conta WhatsApp",
                                     "Até 5 Grupos Monitorados",
                                     "Captura de até 50 Leads",
                                     "3 Agendamentos por dia",
@@ -256,7 +284,7 @@ const LandingPage = ({ onGetStarted }) => {
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={onGetStarted} className="w-full py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 font-bold transition-all">
+                            <button onClick={() => onGetStarted('basic')} className="w-full py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 font-bold transition-all">
                                 Começar Agora
                             </button>
                         </motion.div>
@@ -279,7 +307,6 @@ const LandingPage = ({ onGetStarted }) => {
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
                                 {[
-                                    "2 Contas WhatsApp",
                                     "Até 10 Grupos Monitorados",
                                     "Captura de até 1.000 Leads",
                                     "5 Agendamentos por dia",
@@ -293,7 +320,7 @@ const LandingPage = ({ onGetStarted }) => {
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={onGetStarted} className="w-full py-4 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold shadow-lg shadow-purple-600/20 transition-all">
+                            <button onClick={() => onGetStarted('intermediario')} className="w-full py-4 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold shadow-lg shadow-purple-600/20 transition-all">
                                 Selecionar Plano
                             </button>
                         </motion.div>
@@ -313,7 +340,6 @@ const LandingPage = ({ onGetStarted }) => {
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
                                 {[
-                                    "5 Contas WhatsApp",
                                     "Grupos Monitorados Ilimitados",
                                     "Leads Ilimitados",
                                     "Agendamentos Ilimitados",
@@ -327,7 +353,7 @@ const LandingPage = ({ onGetStarted }) => {
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={onGetStarted} className="w-full py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 font-bold transition-all">
+                            <button onClick={() => onGetStarted('pro')} className="w-full py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 font-bold transition-all">
                                 Conversar com Vendas
                             </button>
                         </motion.div>
@@ -345,11 +371,53 @@ const LandingPage = ({ onGetStarted }) => {
                             Não perca mais tempo com processos manuais. Comece a automatizar sua operação hoje mesmo.
                         </p>
                         <button
-                            onClick={onGetStarted}
+                            onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
                             className="bg-white text-purple-700 px-10 py-5 rounded-2xl font-black text-lg hover:scale-105 active:scale-95 transition-all shadow-xl"
                         >
                             Quero o Acesso agora
                         </button>
+                    </div>
+                </div>
+            </section>
+
+            {/* Contacts Section */}
+            <section id="contacts" className="py-24 px-6 relative bg-white/[0.02] border-t border-white/5">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-black mb-4">Fale com a Gente</h2>
+                        <p className="text-slate-400">Precisa de ajuda ou de um plano personalizado? Entre em contato agora.</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* WhatsApp Contact */}
+                        <motion.a 
+                            href="https://wa.me/14168051106" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            whileHover={{ y: -5 }}
+                            className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all flex flex-col items-center text-center group cursor-pointer"
+                        >
+                            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <MessageSquare size={32} className="text-emerald-500" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-2 text-white">WhatsApp</h3>
+                            <p className="text-emerald-400 font-medium text-lg mb-2">+1 (416) 805-1106</p>
+                            <p className="text-slate-500 text-sm">Respostas rápidas para assinaturas e suporte comercial.</p>
+                        </motion.a>
+
+                        {/* Email Contact */}
+                        <motion.a 
+                            href="mailto:offehub@gmail.com" 
+                            whileHover={{ y: -5 }}
+                            className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all flex flex-col items-center text-center group cursor-pointer"
+                        >
+                            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <MessageSquare size={32} className="text-purple-500" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-2 text-white">E-mail Corporativo</h3>
+                            <p className="text-purple-400 font-medium text-lg mb-2">offehub@gmail.com</p>
+                            <p className="text-slate-500 text-sm">Para parcerias, suporte técnico avançado ou dúvidas gerais.</p>
+                        </motion.a>
                     </div>
                 </div>
             </section>
@@ -379,10 +447,10 @@ const LandingPage = ({ onGetStarted }) => {
                     </div>
 
                     <div className="space-y-4">
-                        <h4 className="font-bold text-sm uppercase tracking-widest text-slate-300">Legal</h4>
+                        <h4 className="font-bold text-sm uppercase tracking-widest text-slate-300">Suporte</h4>
                         <ul className="space-y-2 text-slate-500 text-sm">
-                            <li><a href="#" className="hover:text-white transition-colors">Termos de Uso</a></li>
-                            <li><a href="#" className="hover:text-white transition-colors">Privacidade</a></li>
+                            <li><a href="mailto:offehub@gmail.com" className="hover:text-white transition-colors">offehub@gmail.com</a></li>
+                            <li><a href="https://wa.me/14168051106" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp: +1 (416) 805-1106</a></li>
                         </ul>
                     </div>
                 </div>
