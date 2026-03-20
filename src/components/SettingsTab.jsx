@@ -105,7 +105,7 @@ const SettingsTab = (props) => {
                                         {t('settings.scanDesc')}
                                     </p>
                                     <button
-                                        onClick={() => socket?.emit('force_qr')}
+                                        onClick={() => { window.alert('Solicitando Reset Nuclear no servidor...'); socket?.emit('force_qr'); }}
                                         className="px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer"
                                         style={{ background: 'rgba(124,111,255,0.1)', border: '1px solid rgba(124,111,255,0.3)', color: 'var(--accent)' }}
                                     >
@@ -119,7 +119,7 @@ const SettingsTab = (props) => {
                                         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('settings.waiting')}</p>
                                     </div>
                                     <button
-                                        onClick={() => socket?.emit('force_qr')}
+                                        onClick={() => { window.alert('Solicitando Reset Nuclear no servidor...'); socket?.emit('force_qr'); }}
                                         className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer"
                                         style={{ background: 'rgba(124,111,255,0.1)', border: '1px solid rgba(124,111,255,0.3)', color: 'var(--accent)' }}
                                     >
