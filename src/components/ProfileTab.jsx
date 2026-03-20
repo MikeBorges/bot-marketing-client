@@ -82,12 +82,17 @@ const ProfileTab = ({ userEmail, userName, planExpiresAt, userRole, onRenewPlan,
             {/* Plan Info Chip */}
             <div className="p-4 rounded-2xl flex items-center justify-between border" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: isSuperAdmin ? 'rgba(124,111,255,0.1)' : 'rgba(52,211,153,0.1)', color: isSuperAdmin ? 'var(--accent)' : 'var(--mint)' }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ 
+                        background: isSuperAdmin ? 'rgba(124,111,255,0.1)' : (planExpiresAt && new Date(planExpiresAt) < new Date() ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)'), 
+                        color: isSuperAdmin ? 'var(--accent)' : (planExpiresAt && new Date(planExpiresAt) < new Date() ? '#ef4444' : 'var(--mint)') 
+                    }}>
                         <CheckCircle2 size={20} />
                     </div>
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Status da Assinatura</p>
-                        <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{isSuperAdmin ? 'Acesso Administrativo' : 'Plano Ativo'}</p>
+                        <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+                            {isSuperAdmin ? 'Acesso Administrativo' : (planExpiresAt && new Date(planExpiresAt) < new Date() ? 'Assinatura Vencida' : 'Plano Ativo')}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">

@@ -288,11 +288,21 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                             <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-500 font-bold border border-purple-500/20">
-                                                            {u.name.substring(0, 1)}
+                                                        <div className="relative">
+                                                            <div className="w-9 h-9 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-500 font-bold border border-purple-500/20">
+                                                                {u.name.substring(0, 1)}
+                                                            </div>
+                                                            {u.plan_expires_at && new Date(u.plan_expires_at) < new Date() && (
+                                                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#1a1c24] animate-pulse" title="Vencido" />
+                                                            )}
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-white">{u.name}</p>
+                                                            <p className="text-sm font-bold text-white flex items-center gap-2">
+                                                                {u.name}
+                                                                {u.plan_expires_at && new Date(u.plan_expires_at) < new Date() && (
+                                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 uppercase">Vencido</span>
+                                                                )}
+                                                            </p>
                                                             <p className="text-xs text-slate-500">{u.email}</p>
                                                         </div>
                                                     </div>
@@ -338,7 +348,7 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                                             value={expiryEdits[u.email] !== undefined ? expiryEdits[u.email] : (u.plan_expires_at ? new Date(u.plan_expires_at).toISOString().slice(0, 16) : '')}
                                                             onChange={(e) => setExpiryEdits(prev => ({ ...prev, [u.email]: e.target.value }))}
                                                             disabled={u.role === 'super_admin'}
-                                                            className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-mono text-white focus:outline-none focus:border-purple-500 disabled:opacity-50"
+                                                            className={`bg-white/5 border rounded-lg px-2 py-1 text-[10px] font-mono text-white focus:outline-none focus:border-purple-500 disabled:opacity-50 ${u.plan_expires_at && new Date(u.plan_expires_at) < new Date() ? 'border-red-500/50 text-red-400' : 'border-white/10'}`}
                                                         />
                                                         {expiryEdits[u.email] !== undefined && (
                                                             <button
