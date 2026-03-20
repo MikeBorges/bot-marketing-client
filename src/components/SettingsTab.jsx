@@ -104,20 +104,26 @@ const SettingsTab = (props) => {
                                     <p className="text-center text-sm max-w-xs" style={{ color: 'var(--text-secondary)' }}>
                                         {t('settings.scanDesc')}
                                     </p>
+                                    <button
+                                        onClick={() => socket?.emit('force_qr')}
+                                        className="px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                        style={{ background: 'rgba(124,111,255,0.1)', border: '1px solid rgba(124,111,255,0.3)', color: 'var(--accent)' }}
+                                    >
+                                        🔄 Gerar novo QR Code
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
                                         <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin shrink-0" style={{ borderColor: 'rgba(124,111,255,0.4)', borderTopColor: 'var(--accent)' }} />
-                                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{status === 'Reconectando...' ? 'Reconectando...' : t('settings.waiting')}</p>
+                                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('settings.waiting')}</p>
                                     </div>
                                     <button
-                                        onClick={() => socket && socket.emit('force_qr')}
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                        onClick={() => socket?.emit('force_qr')}
+                                        className="w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer"
                                         style={{ background: 'rgba(124,111,255,0.1)', border: '1px solid rgba(124,111,255,0.3)', color: 'var(--accent)' }}
                                     >
-                                        <QrCode size={15} />
-                                        Gerar QR Code
+                                        🔄 Forçar QR Code
                                     </button>
                                 </div>
                             )}
