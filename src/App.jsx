@@ -1204,6 +1204,7 @@ function App() {
                 API_URL={API_URL}
                 addNotification={addNotification}
                 config={autoConfig}
+                socket={socket}
                 onSaveConfig={(newConfig) => {
                   socket.emit('update_config', { ...newConfig, imageData: imagePreview });
                   addNotification(t('toast.configSaved'), 'success');
