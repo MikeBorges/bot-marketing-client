@@ -543,9 +543,7 @@ function App() {
     return events.filter(e => {
       if (analysisTimeRange && typeof analysisTimeRange === 'object' && analysisTimeRange.type === 'custom') {
         return e.timestamp >= analysisTimeRange.from && e.timestamp <= analysisTimeRange.to;
-      } else if (typeof analysisTimeRange === 'number') {
         return e.timestamp > Date.now() - analysisTimeRange;
-      } else if (typeof analysisTimeRange === 'string' && analysisTimeRange.startsWith('month-')) {
         const parts = analysisTimeRange.split('-');
         const year = parseInt(parts[1]);
         const month = parseInt(parts[2]);
@@ -837,10 +835,8 @@ function App() {
       {/* Sidebar - Hidden on mobile */}
       <aside className="w-64 flex-col p-5 z-10 hidden lg:flex" style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}>
         <div className="flex items-center gap-3 mb-8 px-1">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent-border)' }}>
-            <MessageSquare size={18} style={{ color: 'var(--accent)' }} />
-          </div>
-          <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--text-primary)' }}>
+          <img src="/logo.webp" alt="OffeHub Logo" className="w-10 h-10 rounded-xl object-contain drop-shadow-md" />
+          <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             OffeHub
           </h1>
         </div>

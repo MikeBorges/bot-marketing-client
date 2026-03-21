@@ -1,0 +1,22 @@
+{
+  "short_name": "OffeHub",
+  "name": "OffeHub Automations",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0a0a0f",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#0a0a0f",
+  "description": "Automatize o seu WhatsApp com OffeHub"
+}

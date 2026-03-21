@@ -85,9 +85,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
             <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F1117]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-600/20">
-                            <Zap size={20} className="text-white" />
-                        </div>
+                        <img src="/logo.webp" alt="OffeHub Logo" className="w-9 h-9 object-contain" />
                         <span className="text-xl font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>OffeHub</span>
                     </div>
 
@@ -109,7 +107,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                         )}
                         <button
                             onClick={() => onGetStarted(null)}
-                            className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold text-sm transition-all shadow-lg shadow-purple-600/20 active:scale-95"
+                            className="px-6 py-2.5 rounded-xl bg-[#7c6fff] hover:bg-[#6b5ce7] font-bold text-sm transition-all shadow-lg shadow-[#7c6fff]/20 active:scale-95"
                         >
                             {isAuthenticated ? 'Ver Dashboard' : 'Entrar no Dashboard'}
                         </button>
@@ -133,7 +131,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                         </span>
                         <h1 className="text-5xl md:text-7xl font-black leading-tight mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                             Escale seu Marketing de <br />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-indigo-400 to-emerald-400">Grupos como nunca antes</span>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#7c6fff] via-indigo-400 to-[#7c6fff]">Grupos como nunca antes</span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
                             O OffeHub é a solução definitiva para gerenciar leads, automação e campanhas em escala dentro do ecossistema do WhatsApp.
@@ -320,7 +318,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={() => onGetStarted('intermediario')} className="w-full py-4 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold shadow-lg shadow-purple-600/20 transition-all">
+                            <button onClick={() => onGetStarted('intermediario')} className="w-full py-4 rounded-xl bg-[#7c6fff] hover:bg-[#6b5ce7] font-bold shadow-lg shadow-[#7c6fff]/20 transition-all">
                                 Selecionar Plano
                             </button>
                         </motion.div>
@@ -363,7 +361,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
 
             {/* CTA Section */}
             <section className="py-24 px-6">
-                <div className="max-w-5xl mx-auto rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden bg-gradient-to-tr from-purple-600 to-indigo-700 shadow-2xl shadow-purple-600/20">
+                <div className="max-w-5xl mx-auto rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden bg-gradient-to-tr from-[#7c6fff] to-indigo-700 shadow-2xl shadow-[#7c6fff]/20">
                     <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)]" />
                     <div className="relative z-10">
                         <h2 className="text-4xl md:text-6xl font-black mb-6 leading-tight">Pronto para transformar seu <br /> WhatsApp em uma máquina?</h2>
@@ -372,7 +370,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                         </p>
                         <button
                             onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="bg-white text-purple-700 px-10 py-5 rounded-2xl font-black text-lg hover:scale-105 active:scale-95 transition-all shadow-xl"
+                            className="bg-white text-[#7c6fff] px-10 py-5 rounded-2xl font-black text-lg hover:scale-105 active:scale-95 transition-all shadow-xl"
                         >
                             Quero o Acesso agora
                         </button>
@@ -388,34 +386,18 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                         <p className="text-slate-400">Precisa de ajuda ou de um plano personalizado? Entre em contato agora.</p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8">
-                        {/* WhatsApp Contact */}
-                        <motion.a 
-                            href="https://wa.me/14168051106" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            whileHover={{ y: -5 }}
-                            className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all flex flex-col items-center text-center group cursor-pointer"
-                        >
-                            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                <MessageSquare size={32} className="text-emerald-500" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2 text-white">WhatsApp</h3>
-                            <p className="text-emerald-400 font-medium text-lg mb-2">+1 (416) 805-1106</p>
-                            <p className="text-slate-500 text-sm">Respostas rápidas para assinaturas e suporte comercial.</p>
-                        </motion.a>
-
+                    <div className="flex justify-center">
                         {/* Email Contact */}
                         <motion.a 
                             href="mailto:offehub@gmail.com" 
                             whileHover={{ y: -5 }}
-                            className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all flex flex-col items-center text-center group cursor-pointer"
+                            className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-[#7c6fff]/50 hover:shadow-[0_0_30px_rgba(124,111,255,0.15)] transition-all flex flex-col items-center text-center group cursor-pointer max-w-sm w-full"
                         >
-                            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                <MessageSquare size={32} className="text-purple-500" />
+                            <div className="w-16 h-16 rounded-2xl bg-[#7c6fff]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <MessageSquare size={32} className="text-[#7c6fff]" />
                             </div>
                             <h3 className="text-xl font-bold mb-2 text-white">E-mail Corporativo</h3>
-                            <p className="text-purple-400 font-medium text-lg mb-2">offehub@gmail.com</p>
+                            <p className="text-[#7c6fff] font-medium text-lg mb-2">offehub@gmail.com</p>
                             <p className="text-slate-500 text-sm">Para parcerias, suporte técnico avançado ou dúvidas gerais.</p>
                         </motion.a>
                     </div>
@@ -427,9 +409,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                 <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
                     <div className="col-span-2 space-y-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
-                                <Zap size={16} />
-                            </div>
+                            <img src="/logo.webp" alt="OffeHub Logo" className="w-8 h-8 object-contain" />
                             <span className="text-lg font-bold">OffeHub</span>
                         </div>
                         <p className="text-slate-500 max-w-sm">

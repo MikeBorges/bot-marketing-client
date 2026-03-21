@@ -64,8 +64,8 @@ const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
                 className="w-full max-w-md"
             >
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 mb-4 shadow-xl shadow-purple-600/20">
-                        <Lock className="text-white" size={32} />
+                    <div className="inline-flex items-center justify-center mb-4">
+                        <img src="/logo.webp" alt="OffeHub Logo" className="w-16 h-16 object-contain shadow-xl shadow-purple-600/10" />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-2">OffeHub</h1>
                     <p className="text-slate-400">Gerenciamento inteligente de automação</p>
@@ -75,13 +75,13 @@ const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
                     <div className="flex bg-white/5 p-1 rounded-xl mb-8">
                         <button
                             onClick={() => setActiveTab('login')}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'login' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-white'}`}
+                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'login' ? 'bg-[#7c6fff] text-white shadow-lg shadow-[#7c6fff]/20' : 'text-slate-400 hover:text-white'}`}
                         >
                             Login
                         </button>
                         <button
                             onClick={() => setActiveTab('register')}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'register' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-white'}`}
+                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all ${activeTab === 'register' ? 'bg-[#7c6fff] text-white shadow-lg shadow-[#7c6fff]/20' : 'text-slate-400 hover:text-white'}`}
                         >
                             Registrar
                         </button>
@@ -108,7 +108,7 @@ const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
                                                 value={formData.name}
                                                 onChange={handleChange}
                                                 required
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500 transition-all"
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#7c6fff] transition-all"
                                                 placeholder="Seu nome"
                                             />
                                         </div>
@@ -125,7 +125,7 @@ const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
                                             value={formData.email}
                                             onChange={handleChange}
                                             required
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500 transition-all"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#7c6fff] transition-all"
                                             placeholder="seu@email.com"
                                         />
                                     </div>
@@ -141,7 +141,7 @@ const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
                                             value={formData.password}
                                             onChange={handleChange}
                                             required
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-purple-500 transition-all"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#7c6fff] transition-all"
                                             placeholder="••••••••"
                                         />
                                     </div>
@@ -163,7 +163,7 @@ const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-lg shadow-purple-600/30 hover:shadow-purple-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#7c6fff] to-[#6b5ce7] text-white font-bold shadow-lg shadow-[#7c6fff]/30 hover:shadow-[#7c6fff]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <RefreshCw className="animate-spin" size={20} />
@@ -180,14 +180,14 @@ const AuthPage = ({ onLogin, defaultTab = 'login' }) => {
                         {activeTab === 'login' ? (
                             <button 
                                 onClick={() => setActiveTab('register')}
-                                className="text-sm text-slate-400 hover:text-purple-400 transition-colors"
+                                className="text-sm text-slate-400 hover:text-[#7c6fff] transition-colors"
                             >
                                 Não tem uma conta? <span className="font-bold">Registre-se agora</span>
                             </button>
                         ) : (
                             <button 
                                 onClick={() => setActiveTab('login')}
-                                className="text-sm text-slate-400 hover:text-purple-400 transition-colors"
+                                className="text-sm text-slate-400 hover:text-[#7c6fff] transition-colors"
                             >
                                 Já tem uma conta? <span className="font-bold">Faça login</span>
                             </button>

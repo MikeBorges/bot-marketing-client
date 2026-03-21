@@ -90,9 +90,11 @@ const GroupsTab = ({
         .filter(g => (autoConfig.monitoredGroups || []).includes(g.id))
         .map(g => {
             const views = stats?.[g.id]?.views || 0;
+            const clicks = stats?.[g.id]?.clicks || 0;
             const viewsPct = g.participants > 0 ? ((views / g.participants) * 100) : 0;
+            const convPct = views > 0 ? ((clicks / views) * 100) : 0;
             const createdAt = stats?.[g.id]?.createdAt || null;
-            return { ...g, views, viewsPct, createdAt };
+            return { ...g, views, viewsPct, clicks, convPct, createdAt };
         });
 
     const filteredAnalysis = analysisTerm.trim()
@@ -157,8 +159,11 @@ const GroupsTab = ({
 
     const totalMembers = analysisData.reduce((a, g) => a + g.participants, 0);
     const totalViews = analysisData.reduce((a, g) => a + g.views, 0);
-    // Média ponderada: total de views / total de membros (correto e consistente com a coluna)
+    const totalClicks = analysisData.reduce((a, g) => a + g.clicks, 0);
+    // Média ponderada: total de views / total de membros
     const avgViewsPct = totalMembers > 0 ? (totalViews / totalMembers) * 100 : 0;
+    // Conversão média: total de cliques / total de views
+    const avgConvPct = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
 
     // Base de capacidade: usa threshold configurado se for maior que o maior grupo,
     // senão usa o maior número de membros como 100% (evita barras com 2850%)
@@ -168,13 +173,15 @@ const GroupsTab = ({
 
     const exportToCSV = () => {
         const BOM = '\uFEFF'; // UTF-8 BOM para Excel reconhecer acentos
-        const headers = ['Grupo', 'Membros', 'Capacidade (%)', 'Views', 'Views (%)', 'Data Criação'];
+        const headers = ['Grupo', 'Membros', 'Capacidade (%)', 'Views', 'Views (%)', 'Cliques', 'Conversão (%)', 'Data Criação'];
         const rows = analysisData.map(g => [
             `"${g.name.replace(/"/g, '""')}"`,
             g.participants,
             autoConfig?.threshold > 0 ? Math.min(100, ((g.participants / capacityBase) * 100)).toFixed(1) : '-',
             g.views,
             g.viewsPct.toFixed(1),
+            g.clicks,
+            g.convPct.toFixed(1),
             g.createdAt ? new Date(g.createdAt).toLocaleDateString('pt-BR') : 'N/D'
         ]);
         // Linha de totais
@@ -184,6 +191,8 @@ const GroupsTab = ({
             '',
             totalViews,
             avgViewsPct.toFixed(1) + ' (média)',
+            totalClicks,
+            avgConvPct.toFixed(1) + ' (média)',
             ''
         ]);
 
@@ -386,7 +395,7 @@ const GroupsTab = ({
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-3 mb-5">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                                 <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{t('groups.analysis.totalMembers')}</p>
                                     <p className="text-2xl font-bold text-white">{totalMembers.toLocaleString('pt-BR')}</p>
@@ -396,8 +405,12 @@ const GroupsTab = ({
                                     <p className="text-2xl font-bold text-blue-400">{totalViews.toLocaleString('pt-BR')}</p>
                                 </div>
                                 <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
-                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{t('groups.analysis.avgViews')}</p>
-                                    <p className="text-2xl font-bold text-whatsapp">{avgViewsPct.toFixed(1)}%</p>
+                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Total de Cliques</p>
+                                    <p className="text-2xl font-bold text-whatsapp">{totalClicks.toLocaleString('pt-BR')}</p>
+                                </div>
+                                <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Conversão Média</p>
+                                    <p className="text-2xl font-bold text-emerald-400">{avgConvPct.toFixed(1)}%</p>
                                 </div>
                             </div>
 
@@ -458,6 +471,18 @@ const GroupsTab = ({
                                                 <div className="flex items-center justify-end">{t('groups.analysis.colViewsPct')} <SortIcon column="viewsPct" /></div>
                                             </th>
                                             <th
+                                                className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                                onClick={() => requestSort('clicks')}
+                                            >
+                                                <div className="flex items-center justify-end">Cliques <SortIcon column="clicks" /></div>
+                                            </th>
+                                            <th
+                                                className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
+                                                onClick={() => requestSort('convPct')}
+                                            >
+                                                <div className="flex items-center justify-end">Conversão <SortIcon column="convPct" /></div>
+                                            </th>
+                                            <th
                                                 className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors hidden lg:table-cell"
                                                 onClick={() => requestSort('createdAt')}
                                             >
@@ -500,9 +525,6 @@ const GroupsTab = ({
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <span className="text-blue-400 font-bold">{g.views}</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
                                                         <div className="flex items-center justify-end gap-2">
                                                             <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
                                                                 <div
@@ -511,6 +533,20 @@ const GroupsTab = ({
                                                                 />
                                                             </div>
                                                             <span className="text-xs font-bold text-slate-300">{g.viewsPct.toFixed(1)}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="text-whatsapp font-bold">{g.clicks}</span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-whatsapp rounded-full"
+                                                                    style={{ width: `${Math.min(100, g.convPct)}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-slate-300">{g.convPct.toFixed(1)}%</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-right text-xs text-slate-500 hidden lg:table-cell">
@@ -526,7 +562,9 @@ const GroupsTab = ({
                                                 <td className="px-4 py-3 text-right text-white">{totalMembers.toLocaleString('pt-BR')}</td>
                                                 <td className="px-4 py-3 hidden md:table-cell" />
                                                 <td className="px-4 py-3 text-right text-blue-400">{totalViews.toLocaleString('pt-BR')}</td>
-                                                <td className="px-4 py-3 text-right text-whatsapp">{avgViewsPct.toFixed(1)}%</td>
+                                                <td className="px-4 py-3 text-right text-slate-300">{avgViewsPct.toFixed(1)}%</td>
+                                                <td className="px-4 py-3 text-right text-whatsapp">{totalClicks.toLocaleString('pt-BR')}</td>
+                                                <td className="px-4 py-3 text-right text-emerald-400">{avgConvPct.toFixed(1)}%</td>
                                                 <td className="px-4 py-3 hidden lg:table-cell" />
                                             </tr>
                                         )}

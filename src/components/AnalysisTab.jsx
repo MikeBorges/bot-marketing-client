@@ -92,14 +92,15 @@ const AnalysisTab = ({
     const dailyStats = useMemo(() => {
         const statsByDay = {};
         const todayLocalStr = new Date().toLocaleDateString();
-        statsByDay[todayLocalStr] = { date: 'Hoje', join: 0, leave: 0, growth: 0, timestamp: Date.now() };
+        statsByDay[todayLocalStr] = { date: 'Hoje', join: 0, leave: 0, click: 0, growth: 0, timestamp: Date.now() };
         filteredEvents.forEach(e => {
             const d = new Date(e.timestamp);
             const day = d.toLocaleDateString();
             const label = day === todayLocalStr ? 'Hoje' : day;
-            if (!statsByDay[day]) statsByDay[day] = { date: label, join: 0, leave: 0, growth: 0, timestamp: e.timestamp };
+            if (!statsByDay[day]) statsByDay[day] = { date: label, join: 0, leave: 0, click: 0, growth: 0, timestamp: e.timestamp };
             if (e.type === 'join') statsByDay[day].join++;
             if (e.type === 'leave') statsByDay[day].leave++;
+            if (e.type === 'click') statsByDay[day].click++;
             statsByDay[day].growth = statsByDay[day].join - statsByDay[day].leave;
         });
         return Object.values(statsByDay).sort((a, b) => a.timestamp - b.timestamp);
@@ -326,7 +327,7 @@ const AnalysisTab = ({
                 {[
                     { label: t('analysis.stats.entries'), value: `+${filteredEvents.filter(e => e.type === 'join').length}`, color: 'var(--mint)' },
                     { label: t('analysis.stats.exits'), value: `-${filteredEvents.filter(e => e.type === 'leave').length}`, color: 'var(--danger)' },
-                    { label: 'Grupos Criados', value: totalGroupsCreated, color: '#fbbf24' },
+                    { label: 'Cliques em Links', value: filteredEvents.filter(e => e.type === 'click').length, color: '#fbbf24' },
                     { label: `${t('analysis.stats.views')} Média`, value: `${avgViewRate}%`, color: 'var(--accent)' },
                 ].map((kpi, i) => (
                     <div key={i} className="stat-card">
@@ -352,6 +353,10 @@ const AnalysisTab = ({
                             <div className="w-2 h-2 rounded-full bg-red-500" />
                             <span style={{ color: 'var(--text-secondary)' }}>{t('analysis.stats.exits')}</span>
                         </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-amber-400" />
+                            <span style={{ color: 'var(--text-secondary)' }}>Cliques</span>
+                        </div>
                     </div>
                 </div>
                 <div className="overflow-x-auto pb-4 -mx-2 px-2">
@@ -362,9 +367,11 @@ const AnalysisTab = ({
                                 <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
                                     <div className="w-full flex justify-center gap-0.5 h-40 items-end">
                                         <motion.div initial={{ height: 0 }} animate={{ height: `${(day.join / maxVal) * 100}%` }}
-                                            className="w-5/12 bg-emerald-500/30 border-t-2 border-emerald-500 rounded-t" />
+                                            className="w-1/3 bg-emerald-500/30 border-t-2 border-emerald-500 rounded-t" title={`Entradas: ${day.join}`} />
                                         <motion.div initial={{ height: 0 }} animate={{ height: `${(day.leave / maxVal) * 100}%` }}
-                                            className="w-5/12 bg-red-500/30 border-t-2 border-red-500 rounded-t" />
+                                            className="w-1/3 bg-red-500/30 border-t-2 border-red-500 rounded-t" title={`Saídas: ${day.leave}`} />
+                                        <motion.div initial={{ height: 0 }} animate={{ height: `${(day.click / maxVal) * 100}%` }}
+                                            className="w-1/3 bg-amber-400/30 border-t-2 border-amber-400 rounded-t" title={`Cliques: ${day.click}`} />
                                     </div>
                                     <span className="text-[9px] rotate-45 origin-left whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{day.date}</span>
                                     <div className="absolute bottom-full mb-2 hidden group-hover:block z-20">
@@ -372,6 +379,7 @@ const AnalysisTab = ({
                                             <p className="font-bold border-b border-white/5 mb-1 pb-1" style={{ color: 'var(--text-primary)' }}>{day.date}</p>
                                             <p className="text-emerald-400">{t('analysis.stats.entries')}: {day.join}</p>
                                             <p className="text-red-400">{t('analysis.stats.exits')}: {day.leave}</p>
+                                            <p className="text-amber-400">Cliques: {day.click}</p>
                                             <p style={{ color: 'var(--accent)' }}>{t('analysis.stats.balance')}: {day.growth}</p>
                                         </div>
                                     </div>
