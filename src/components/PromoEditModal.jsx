@@ -13,6 +13,7 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
     const [installmentsInput, setInstallmentsInput] = useState(1);
     const [installmentValueInput, setInstallmentValueInput] = useState('');
     const [interestFree, setInterestFree] = useState(true);
+    const [showInstallments, setShowInstallments] = useState(true);
     const [showCouponInMessage, setShowCouponInMessage] = useState(true);
 
     const [selectedCoupon, setSelectedCoupon] = useState('');
@@ -89,7 +90,8 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
             freight: freightInput.trim(),
             interestFree: interestFree,
             coupon: selectedCoupon,
-            showCouponInMessage: showCouponInMessage
+            showCouponInMessage: showCouponInMessage,
+            showInstallments: showInstallments
         });
         onClose();
     };
@@ -283,17 +285,32 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                         )}
 
                         {/* Toggle de exibição do cupom no texto */}
-                        <div className="flex items-center gap-2 px-1 pt-2 border-t border-white/5">
-                            <input
-                                type="checkbox"
-                                id="showCouponInMessage"
-                                checked={showCouponInMessage}
-                                onChange={(e) => setShowCouponInMessage(e.target.checked)}
-                                className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
-                            />
-                            <label htmlFor="showCouponInMessage" className="text-sm text-slate-300 font-bold cursor-pointer">
-                                Exibir CUPOM no texto da mensagem?
-                            </label>
+                        <div className="flex flex-col gap-3 px-1 pt-2 border-t border-white/5">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="showCouponInMessage"
+                                    checked={showCouponInMessage}
+                                    onChange={(e) => setShowCouponInMessage(e.target.checked)}
+                                    className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
+                                />
+                                <label htmlFor="showCouponInMessage" className="text-sm text-slate-300 font-bold cursor-pointer">
+                                    Exibir CUPOM no texto da mensagem?
+                                </label>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="showInstallments"
+                                    checked={showInstallments}
+                                    onChange={(e) => setShowInstallments(e.target.checked)}
+                                    className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
+                                />
+                                <label htmlFor="showInstallments" className="text-sm text-slate-300 font-bold cursor-pointer">
+                                    Exibir PARCELAMENTO na imagem e texto?
+                                </label>
+                            </div>
                         </div>
                     </div>
 
