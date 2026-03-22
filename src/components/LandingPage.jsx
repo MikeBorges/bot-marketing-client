@@ -93,6 +93,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                         <a href="#features" className="hover:text-white transition-colors">Funcionalidades</a>
                         <a href="#how-it-works" className="hover:text-white transition-colors">Como Funciona</a>
                         <a href="#plans" className="hover:text-white transition-colors">Planos</a>
+                        <a href="https://discord.gg/ZwAnrqte" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Comunidade</a>
                         <a href="#contacts" className="hover:text-white transition-colors">Contatos</a>
                     </div>
 
@@ -269,16 +270,22 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
                                 {[
-                                    "Até 5 Grupos Monitorados",
-                                    "Captura de até 50 Leads",
-                                    "3 Agendamentos por dia",
-                                    "Sem Chatbot / Promoções",
-                                    "Suporte via Ticket",
-                                    "Interface OffeHub Premium"
+                                    { text: "Grupos Monitorados Ilimitados", ok: true },
+                                    { text: "Leads e Remarketing Ilimitados", ok: false, sub: "Até 100 Leads" },
+                                    { text: "Agendamentos Ilimitados", ok: false, sub: "3 por dia" },
+                                    { text: "Chatbot Inteligente 24/7", ok: false, sub: "Somente Intermediário/Pro" },
+                                    { text: "Gerador de Promoções + IA", ok: false },
+                                    { text: "Tracking e Análise Avançada", ok: false },
+                                    { text: "Integração Completa (ML + API)", ok: false, sub: "Somente Pro" },
+                                    { text: "Anti-Spam e Moderação Total", ok: true },
+                                    { text: "Gerente de Conta Dedicado", ok: false, sub: "Suporte via Ticket" }
                                 ].map((item, i) => (
-                                    <li key={i} className={`flex items-center gap-3 text-sm ${item === "Sem Chatbot / Promoções" ? 'text-slate-500 italic' : 'text-slate-300'}`}>
-                                        {item === "Sem Chatbot / Promoções" ? <X size={16} className="text-red-500/50" /> : <CheckCircle2 size={16} className="text-purple-500" />}
-                                        {item}
+                                    <li key={i} className={`flex items-center gap-3 text-sm ${!item.ok ? 'text-slate-500 italic' : 'text-slate-300'}`}>
+                                        {!item.ok ? <X size={16} className="text-red-500/50" /> : <CheckCircle2 size={16} className="text-purple-500" />}
+                                        <div className="flex flex-col">
+                                            <span>{item.text}</span>
+                                            {item.sub && <span className="text-[10px] opacity-70">({item.sub})</span>}
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
@@ -305,16 +312,22 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
                                 {[
-                                    "Até 10 Grupos Monitorados",
-                                    "Captura de até 1.000 Leads",
-                                    "5 Agendamentos por dia",
-                                    "100 Links Inteligentes / mês",
-                                    "Integração Mercado Livre",
-                                    "Suporte prioritário"
+                                    { text: "Grupos Monitorados Ilimitados", ok: true },
+                                    { text: "Leads e Remarketing Ilimitados", ok: false, sub: "Até 2.000 Leads" },
+                                    { text: "Agendamentos Ilimitados", ok: false, sub: "10 por dia" },
+                                    { text: "Chatbot Inteligente 24/7", ok: true },
+                                    { text: "Gerador de Promoções + IA", ok: true },
+                                    { text: "Tracking e Análise Avançada", ok: true },
+                                    { text: "Integração Completa (ML + API)", ok: false, sub: "Somente Pro" },
+                                    { text: "Anti-Spam e Moderação Total", ok: true },
+                                    { text: "Suporte Prioritário", ok: true }
                                 ].map((item, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-sm text-slate-100 font-medium">
-                                        <CheckCircle2 size={16} className="text-purple-400" />
-                                        {item}
+                                    <li key={i} className={`flex items-center gap-3 text-sm ${!item.ok ? 'text-slate-400 italic' : 'text-slate-100 font-medium'}`}>
+                                        {!item.ok ? <X size={16} className="text-white/30" /> : <CheckCircle2 size={16} className="text-purple-400" />}
+                                        <div className="flex flex-col">
+                                            <span>{item.text}</span>
+                                            {item.sub && <span className="text-[10px] opacity-70">({item.sub})</span>}
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
@@ -338,16 +351,19 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                             </div>
                             <ul className="space-y-4 mb-8 flex-1">
                                 {[
-                                    "Grupos Monitorados Ilimitados",
-                                    "Leads Ilimitados",
-                                    "Agendamentos Ilimitados",
-                                    "Integração Mercado Livre",
-                                    "Análise de Dados Avançada",
-                                    "Gerente de Conta"
+                                    { text: "Grupos Monitorados Ilimitados", ok: true },
+                                    { text: "Leads e Remarketing Ilimitados", ok: true },
+                                    { text: "Agendamentos Ilimitados", ok: true },
+                                    { text: "Chatbot Inteligente + IA", ok: true },
+                                    { text: "Gerador de Promoções + IA", ok: true },
+                                    { text: "Tracking e Análise Avançada", ok: true },
+                                    { text: "Integração Completa (ML + API)", ok: true },
+                                    { text: "Anti-Spam e Moderação Total", ok: true },
+                                    { text: "Gerente de Conta Dedicado", ok: true }
                                 ].map((item, i) => (
                                     <li key={i} className="flex items-center gap-3 text-sm text-slate-300">
                                         <CheckCircle2 size={16} className="text-purple-500" />
-                                        {item}
+                                        <span>{item.text}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -382,7 +398,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
             <section id="contacts" className="py-24 px-6 relative bg-white/[0.02] border-t border-white/5">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-black mb-4">Fale com a Gente</h2>
+                        <h2 className="text-3xl md:text-5xl font-black mb-4">Fale conosco</h2>
                         <p className="text-slate-400">Precisa de ajuda ou de um plano personalizado? Entre em contato agora.</p>
                     </div>
 
@@ -430,7 +446,7 @@ const LandingPage = ({ onGetStarted, isAuthenticated, onLogout }) => {
                         <h4 className="font-bold text-sm uppercase tracking-widest text-slate-300">Suporte</h4>
                         <ul className="space-y-2 text-slate-500 text-sm">
                             <li><a href="mailto:offehub@gmail.com" className="hover:text-white transition-colors">offehub@gmail.com</a></li>
-                            <li><a href="https://wa.me/14168051106" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp: +1 (416) 805-1106</a></li>
+                            <li><a href="https://discord.gg/ZwAnrqte" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Comunidade Discord</a></li>
                         </ul>
                     </div>
                 </div>

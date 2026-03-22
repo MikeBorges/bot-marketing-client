@@ -672,12 +672,19 @@ function App() {
     { id: 'config', icon: Settings, label: t('menu.config') },
   ];
 
-  // Restrição de Plano Básico
+  // Restrições por Plano
   const isBasicPlan = userRole !== 'super_admin' && userPlan && (userPlan.toLowerCase() === 'basic' || userPlan.toLowerCase() === 'teste');
+  const isIntermediarioPlan = userRole !== 'super_admin' && userPlan && userPlan.toLowerCase() === 'intermediario';
 
   if (isBasicPlan) {
+    // Basic: Apenas o essencial (Dashboard, Grupos, Agendamento [com limite], Config)
     menuItems = menuItems.filter(item =>
       !['analysis', 'remarketing', 'mercadolivre', 'chatbot'].includes(item.id)
+    );
+  } else if (isIntermediarioPlan) {
+    // Intermediário: Libera quase tudo, menos Mercado Livre (Conforme solicitado)
+    menuItems = menuItems.filter(item =>
+      !['mercadolivre'].includes(item.id)
     );
   }
 
@@ -1179,10 +1186,12 @@ function App() {
               <MercadoLivreTab
                 config={autoConfig}
                 onSaveConfig={(newConfig) => {
-                  socket.emit('update_config', { ...newConfig, imageData: imagePreview });
+                  socket.emit('update_config', { ...newConfig });
                   addNotification('Configurações salvas!', 'success');
                 }}
                 addNotification={addNotification}
+                userPlan={userPlan}
+                userRole={userRole}
               />
             )}
 

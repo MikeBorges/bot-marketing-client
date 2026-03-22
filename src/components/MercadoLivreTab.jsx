@@ -81,7 +81,7 @@ const DonutChart = ({ segments, size = 120 }) => {
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-const MercadoLivreTab = ({ config, onSaveConfig, addNotification }) => {
+const MercadoLivreTab = ({ config, onSaveConfig, addNotification, userPlan, userRole }) => {
     const mlConfig = config?.mercadolivre || {};
     const [accessToken, setAccessToken] = useState(mlConfig.accessToken || '');
     const [appId, setAppId] = useState(mlConfig.appId || '');
@@ -96,6 +96,44 @@ const MercadoLivreTab = ({ config, onSaveConfig, addNotification }) => {
     const [dateTo, setDateTo] = useState(todayStr);
 
     const isConnected = !!(mlConfig.accessToken || accessToken);
+
+    // Verificação de Acesso (Plano PRO)
+    const isPro = userRole === 'super_admin' || userRole === 'admin' || (userPlan && userPlan.toLowerCase() === 'pro');
+
+    if (!isPro) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="glass-card flex flex-col items-center justify-center py-20 text-center space-y-6 border-yellow-500/20"
+            >
+                <div className="w-24 h-24 bg-yellow-500/10 rounded-3xl flex items-center justify-center text-yellow-400 border border-yellow-500/20 rotate-3">
+                    <ShoppingBag size={48} />
+                </div>
+                <div className="space-y-2 max-w-md">
+                    <h3 className="text-3xl font-bold text-white tracking-tight">Recurso Exclusivo PRO</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed">
+                        A Integração com <strong className="text-yellow-400">Mercado Livre</strong> está disponível apenas para assinantes do plano PRO.
+                        Faca o upgrade agora para desbloquear análises avançadas de suas vendas, lucros e métricas em tempo real!
+                    </p>
+                </div>
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => window.location.reload()} // Forçar atualização se o cara já pagou
+                        className="px-6 py-3 rounded-2xl font-bold bg-white/5 hover:bg-white/10 text-white text-sm transition-all border border-white/10"
+                    >
+                        Já assinei? Atualizar
+                    </button>
+                    <button
+                        onClick={() => window.open('https://offehub.com#pricing', '_blank')}
+                        className="active:scale-95 px-8 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold rounded-2xl shadow-xl shadow-yellow-500/20 transition-all text-sm"
+                    >
+                        Fazer Upgrade Agora
+                    </button>
+                </div>
+            </motion.div>
+        );
+    }
 
     const handleSaveCredentials = () => {
         onSaveConfig({

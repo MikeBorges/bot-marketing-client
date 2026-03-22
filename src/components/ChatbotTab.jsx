@@ -38,7 +38,17 @@ const ChatbotTab = ({ socket, status }) => {
     };
 
     useEffect(() => {
-        localStorage.setItem('chatbot_history', JSON.stringify(messages));
+        try {
+            // Pruna o histórico para não estourar o quota do localStorage (5MB)
+            // Removemos as imagens em base64 e limitamos às últimas 20 mensagens
+            const historyToSave = messages.slice(-20).map(m => ({
+                ...m,
+                image: m.image ? 'IMAGE_REMOVED_TO_SAVE_SPACE' : null 
+            }));
+            localStorage.setItem('chatbot_history', JSON.stringify(historyToSave));
+        } catch (e) {
+            console.warn('[Chatbot] Erro ao salvar histórico (Quota Excedida):', e.message);
+        }
         scrollToBottom();
     }, [messages]);
 
@@ -287,30 +297,38 @@ const ChatbotTab = ({ socket, status }) => {
 
                                         {msg.image && (
                                             <div className="relative group">
-                                                <img src={msg.image} alt="Promo" className="w-full max-w-[300px] block" />
-                                                <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-center gap-2">
-                                                    <button
-                                                        onClick={() => downloadImage(msg.image)}
-                                                        className="p-2 bg-white/20 rounded-lg text-white shadow-lg hover:bg-whatsapp hover:scale-110 transition-all backdrop-blur-md"
-                                                        title="Baixar Imagem"
-                                                    >
-                                                        <Download size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => copyImage(msg.image)}
-                                                        className="p-2 bg-white/20 rounded-lg text-white shadow-lg hover:bg-whatsapp hover:scale-110 transition-all backdrop-blur-md"
-                                                        title="Copiar Imagem"
-                                                    >
-                                                        <Copy size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleCopyAll(msg)}
-                                                        className="p-2 bg-white/20 rounded-lg text-white shadow-lg hover:bg-blue-500 hover:scale-110 transition-all backdrop-blur-md"
-                                                        title="Copiar Tudo (Img + Texto)"
-                                                    >
-                                                        <Send size={16} className="rotate-[-45deg]" />
-                                                    </button>
-                                                </div>
+                                                {msg.image === 'IMAGE_REMOVED_TO_SAVE_SPACE' ? (
+                                                    <div className="p-4 bg-white/5 text-slate-500 text-[10px] italic flex items-center justify-center border-b border-white/5">
+                                                        Imagem não disponível no histórico antigo
+                                                    </div>
+                                                ) : (
+                                                    <img src={msg.image} alt="Promo" className="w-full max-w-[300px] block" />
+                                                )}
+                                                {msg.image !== 'IMAGE_REMOVED_TO_SAVE_SPACE' && (
+                                                    <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-center gap-2">
+                                                        <button
+                                                            onClick={() => downloadImage(msg.image)}
+                                                            className="p-2 bg-white/20 rounded-lg text-white shadow-lg hover:bg-whatsapp hover:scale-110 transition-all backdrop-blur-md"
+                                                            title="Baixar Imagem"
+                                                        >
+                                                            <Download size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => copyImage(msg.image)}
+                                                            className="p-2 bg-white/20 rounded-lg text-white shadow-lg hover:bg-whatsapp hover:scale-110 transition-all backdrop-blur-md"
+                                                            title="Copiar Imagem"
+                                                        >
+                                                            <Copy size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCopyAll(msg)}
+                                                            className="p-2 bg-white/20 rounded-lg text-white shadow-lg hover:bg-blue-500 hover:scale-110 transition-all backdrop-blur-md"
+                                                            title="Copiar Tudo (Img + Texto)"
+                                                        >
+                                                            <Send size={16} className="rotate-[-45deg]" />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
 

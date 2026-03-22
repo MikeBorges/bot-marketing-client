@@ -11,6 +11,7 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
     const [promoPriceInput, setPromoPriceInput] = useState('');
     const [freightInput, setFreightInput] = useState('');
     const [installmentsInput, setInstallmentsInput] = useState(1);
+    const [installmentValueInput, setInstallmentValueInput] = useState('');
     const [interestFree, setInterestFree] = useState(true);
 
     const [selectedCoupon, setSelectedCoupon] = useState('');
@@ -22,8 +23,9 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
             setOriginalPriceInput(editData.suggestedOriginalPrice?.toString() || '');
             setPromoPriceInput(editData.product?.price?.toString() || '');
             setFreightInput('');
-            setInstallmentsInput(editData.product?.installments || 12);
-            setInterestFree(true);
+            setInstallmentsInput(editData.product?.installmentCount || 12);
+            setInstallmentValueInput(editData.product?.installmentValue?.toString() || '');
+            setInterestFree(editData.product?.interestFree ?? true);
 
             const rawCoupon = editData.config?.coupons?.[0] || '';
             // Extrai o code se for objeto, ou usa a string diretamente
@@ -32,6 +34,18 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
             setImagePreview(editData.product?.image || '');
         }
     }, [isOpen, editData]);
+
+    // Cálculo automático de parcelas se for SEM JUROS
+    useEffect(() => {
+        if (interestFree) {
+            const price = parseFloat(promoPriceInput) || 0;
+            const count = parseInt(installmentsInput) || 1;
+            if (price > 0 && count > 0) {
+                const val = (price / count).toFixed(2);
+                setInstallmentValueInput(val);
+            }
+        }
+    }, [interestFree, promoPriceInput, installmentsInput]);
 
     // Lidar com Ctrl+V (Colar Imagem)
     useEffect(() => {
@@ -70,6 +84,7 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
             customOriginalPrice: parseFloat(originalPriceInput || editData.suggestedOriginalPrice),
             customPromoPrice: parseFloat(promoPriceInput || editData.product?.price),
             customInstallments: installmentsInput,
+            customInstallmentValue: parseFloat(installmentValueInput),
             freight: freightInput.trim(),
             interestFree: interestFree,
             coupon: selectedCoupon
@@ -149,9 +164,25 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                                     onChange={(e) => setOriginalPriceInput(e.target.value)}
                                     className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
                                 />
-                                <p className="text-[10px] text-slate-500">
-                                    Preço original gerado.
-                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setOriginalPriceInput(editData.product?.originalPrice?.toString() || originalPriceInput)}
+                                        className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase transition-colors"
+                                    >
+                                        [Original Site]
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const suggested = (parseFloat(promoPriceInput) || 0) * (1 + ((editData.config?.inflatePercent || 20) / 100));
+                                            setOriginalPriceInput(suggested.toFixed(2));
+                                        }}
+                                        className="text-[10px] text-orange-400 hover:text-orange-300 font-bold uppercase transition-colors"
+                                    >
+                                        [Sugerido +{editData.config?.inflatePercent || 20}%]
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Preço Por */}
@@ -171,7 +202,6 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            {/* Qtd Parcelas */}
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-400 uppercase">Qtd Parcelas</label>
                                 <input
@@ -182,6 +212,37 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                                     onChange={(e) => setInstallmentsInput(parseInt(e.target.value) || 1)}
                                     className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
                                 />
+                            </div>
+
+                            {/* Valor Individual da Parcela */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase">
+                                    Valor da Parcela (R$) {interestFree && <span className="text-[10px] text-emerald-500 ml-1">(AUTO)</span>}
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={installmentValueInput}
+                                    readOnly={interestFree}
+                                    onChange={(e) => setInstallmentValueInput(e.target.value)}
+                                    className={`w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none ${interestFree ? 'opacity-60 cursor-not-allowed border-emerald-500/30' : 'focus:border-whatsapp/50'}`}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Com Juros / Sem Juros */}
+                            <div className="flex items-center gap-2 px-1">
+                                <input
+                                    type="checkbox"
+                                    id="interestFree"
+                                    checked={interestFree}
+                                    onChange={(e) => setInterestFree(e.target.checked)}
+                                    className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
+                                />
+                                <label htmlFor="interestFree" className="text-sm text-slate-300 font-bold cursor-pointer">
+                                    Parcelamento SEM Juros?
+                                </label>
                             </div>
 
                             {/* Tipo de Frete */}
@@ -197,19 +258,7 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                             </div>
                         </div>
 
-                        {/* Com Juros / Sem Juros */}
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="interestFree"
-                                checked={interestFree}
-                                onChange={(e) => setInterestFree(e.target.checked)}
-                                className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
-                            />
-                            <label htmlFor="interestFree" className="text-sm text-slate-300 font-bold cursor-pointer">
-                                Parcelamento SEM Juros?
-                            </label>
-                        </div>
+
 
                         {/* Cupom */}
                         {coupons.length > 0 && (
