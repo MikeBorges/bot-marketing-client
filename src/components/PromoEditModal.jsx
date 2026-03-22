@@ -13,6 +13,7 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
     const [installmentsInput, setInstallmentsInput] = useState(1);
     const [installmentValueInput, setInstallmentValueInput] = useState('');
     const [interestFree, setInterestFree] = useState(true);
+    const [showCouponInMessage, setShowCouponInMessage] = useState(true);
 
     const [selectedCoupon, setSelectedCoupon] = useState('');
     const [imagePreview, setImagePreview] = useState('');
@@ -87,7 +88,8 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
             customInstallmentValue: parseFloat(installmentValueInput),
             freight: freightInput.trim(),
             interestFree: interestFree,
-            coupon: selectedCoupon
+            coupon: selectedCoupon,
+            showCouponInMessage: showCouponInMessage
         });
         onClose();
     };
@@ -279,6 +281,20 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
                                 </select>
                             </div>
                         )}
+
+                        {/* Toggle de exibição do cupom no texto */}
+                        <div className="flex items-center gap-2 px-1 pt-2 border-t border-white/5">
+                            <input
+                                type="checkbox"
+                                id="showCouponInMessage"
+                                checked={showCouponInMessage}
+                                onChange={(e) => setShowCouponInMessage(e.target.checked)}
+                                className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
+                            />
+                            <label htmlFor="showCouponInMessage" className="text-sm text-slate-300 font-bold cursor-pointer">
+                                Exibir CUPOM no texto da mensagem?
+                            </label>
+                        </div>
                     </div>
 
                     {/* Footer */}
