@@ -128,16 +128,18 @@ const AnalysisTab = ({
 
     // Lógica de exportação CSV do Modal (Estilo Excel)
     const downloadFilteredCSV = (data) => {
-        const headers = ["Data", "Grupo", "Entradas", "Saídas", "Saldo"];
+        const BOM = '\uFEFF';
+        const headers = ["Data", "Grupo", "Entradas", "Saídas", "Cliques", "Saldo"];
         const rows = data.map(d => [
             d.date,
-            d.groupName,
+            `"${(d.groupName || '').replace(/"/g, '""')}"`,
             d.joins,
             d.leaves,
+            d.clicks,
             d.balance
         ]);
 
-        const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+        const csvContent = BOM + [headers, ...rows].map(e => e.join(';')).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -468,27 +470,33 @@ const AnalysisTab = ({
                                 {(() => {
                                     const groupMap = {};
                                     filteredEvents.forEach(e => {
-                                        if (!groupMap[e.groupId]) {
-                                            groupMap[e.groupId] = { name: e.groupName || 'Grupo Desconhecido', joins: 0, leaves: 0, clicks: 0 };
+                                        const key = e.groupId || e.groupName || 'Grupo Desconhecido';
+                                        if (!groupMap[key]) {
+                                            groupMap[key] = { name: e.groupName || 'Grupo Desconhecido', joins: 0, leaves: 0, clicks: 0 };
                                         }
-                                        if (e.type === 'join') groupMap[e.groupId].joins++;
-                                        if (e.type === 'leave') groupMap[e.groupId].leaves++;
-                                        if (e.type === 'click') groupMap[e.groupId].clicks++;
+                                        if (e.type === 'join') groupMap[key].joins++;
+                                        if (e.type === 'leave') groupMap[key].leaves++;
+                                        if (e.type === 'click') groupMap[key].clicks++;
                                     });
 
                                     const sortedGroups = Object.values(groupMap).sort((a, b) => (b.joins - b.leaves) - (a.joins - a.leaves));
+                                    
+                                    const grandTotal = sortedGroups.reduce((acc, g) => ({
+                                        joins: acc.joins + g.joins,
+                                        leaves: acc.leaves + g.leaves,
+                                        clicks: acc.clicks + g.clicks
+                                    }), { joins: 0, leaves: 0, clicks: 0 });
 
                                     if (sortedGroups.length === 0) {
                                         return (
                                             <tr>
-                                                <td colSpan="4" className="py-8 text-center text-sm italic" style={{ color: 'var(--text-muted)' }}>
+                                                <td colSpan="5" className="py-8 text-center text-sm italic" style={{ color: 'var(--text-muted)' }}>
                                                     Nenhuma atividade registrada no período.
                                                 </td>
                                             </tr>
                                         );
                                     }
-
-                                    return sortedGroups.map((g, idx) => {
+                                    const groupRows = sortedGroups.map((g, idx) => {
                                         const balance = g.joins - g.leaves;
                                         return (
                                             <tr key={idx} className="hover:bg-white/5 transition-colors">
@@ -504,6 +512,25 @@ const AnalysisTab = ({
                                             </tr>
                                         );
                                     });
+
+                                    return (
+                                        <>
+                                            {groupRows}
+                                            {sortedGroups.length > 0 && (
+                                                <tr className="bg-white/5 font-black border-t-2" style={{ borderColor: 'var(--border)' }}>
+                                                    <td className="py-4 px-4 text-xs uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>TOTAL GERAL</td>
+                                                    <td className="py-4 px-4 text-sm text-center" style={{ color: 'var(--mint)' }}>+{grandTotal.joins}</td>
+                                                    <td className="py-4 px-4 text-sm text-center" style={{ color: 'var(--danger)' }}>-{grandTotal.leaves}</td>
+                                                    <td className="py-4 px-4 text-sm text-center text-amber-400 font-mono">{grandTotal.clicks}</td>
+                                                    <td className="py-4 px-4 text-sm text-right">
+                                                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${(grandTotal.joins - grandTotal.leaves) >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                            {(grandTotal.joins - grandTotal.leaves) > 0 ? '+' : ''}{grandTotal.joins - grandTotal.leaves}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </>
+                                    );
                                 })()}
                             </tbody>
                         </table>

@@ -561,7 +561,7 @@ function App() {
 
     // Garante que o dia de hoje sempre apareça se estiver no range
     const todayStr = new Date().toLocaleDateString();
-    statsByDay[todayStr] = { date: t('analysis.timeRange.today'), join: 0, leave: 0, growth: 0, timestamp: Date.now() };
+    statsByDay[todayStr] = { date: t('analysis.timeRange.today'), join: 0, leave: 0, click: 0, growth: 0, timestamp: Date.now() };
 
     periodEvents.forEach(e => {
       const d = new Date(e.timestamp);
@@ -569,10 +569,11 @@ function App() {
       const label = day === todayStr ? t('analysis.timeRange.today') : day;
 
       if (!statsByDay[day]) {
-        statsByDay[day] = { date: label, join: 0, leave: 0, growth: 0, timestamp: e.timestamp };
+        statsByDay[day] = { date: label, join: 0, leave: 0, click: 0, growth: 0, timestamp: e.timestamp };
       }
       if (e.type === 'join') statsByDay[day].join++;
       if (e.type === 'leave') statsByDay[day].leave++;
+      if (e.type === 'click') statsByDay[day].click++;
       statsByDay[day].growth = statsByDay[day].join - statsByDay[day].leave;
     });
 
@@ -590,16 +591,18 @@ function App() {
       t('analysis.headers.date') || 'Data',
       t('analysis.stats.entries') || 'Entradas',
       t('analysis.stats.exits') || 'Saídas',
+      t('analysis.stats.clicks') || 'Cliques',
       t('analysis.stats.balance') || 'Saldo'
     ];
     const rows = dailyStats.map(d => [
       d.date,
       d.join,
       d.leave,
+      d.click,
       d.growth
     ]);
 
-    const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+    const csvContent = '\uFEFF' + [headers, ...rows].map(e => e.join(';')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
