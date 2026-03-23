@@ -84,8 +84,14 @@ const AnalysisTab = ({
 
     const applyCustomRange = () => {
         if (!customFrom || !customTo) return;
-        const from = new Date(customFrom).setHours(0, 0, 0, 0);
-        const to = new Date(customTo).setHours(23, 59, 59, 999);
+        
+        // Usar split e mapear para Number para evitar problemas de fuso horário (UTC vs Local)
+        const [yearFrom, monthFrom, dayFrom] = customFrom.split('-').map(Number);
+        const from = new Date(yearFrom, monthFrom - 1, dayFrom, 0, 0, 0, 0).getTime();
+        
+        const [yearTo, monthTo, dayTo] = customTo.split('-').map(Number);
+        const to = new Date(yearTo, monthTo - 1, dayTo, 23, 59, 59, 999).getTime();
+
         setAnalysisTimeRange({ type: 'custom', from, to });
     };
 
@@ -163,12 +169,14 @@ const AnalysisTab = ({
                     groupName: groupName,
                     joins: 0,
                     leaves: 0,
+                    clicks: 0,
                     balance: 0,
                     timestamp: e.timestamp
                 };
             }
             if (e.type === 'join') aggregation[key].joins++;
             if (e.type === 'leave') aggregation[key].leaves++;
+            if (e.type === 'click') aggregation[key].clicks++;
             aggregation[key].balance = aggregation[key].joins - aggregation[key].leaves;
         });
 
@@ -323,12 +331,10 @@ const AnalysisTab = ({
             </div>
 
             {/* ── KPIs ──────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3">
                 {[
                     { label: t('analysis.stats.entries'), value: `+${filteredEvents.filter(e => e.type === 'join').length}`, color: 'var(--mint)' },
                     { label: t('analysis.stats.exits'), value: `-${filteredEvents.filter(e => e.type === 'leave').length}`, color: 'var(--danger)' },
-                    { label: 'Cliques em Links', value: filteredEvents.filter(e => e.type === 'click').length, color: '#fbbf24' },
-                    { label: `${t('analysis.stats.views')} Média`, value: `${avgViewRate}%`, color: 'var(--accent)' },
                 ].map((kpi, i) => (
                     <div key={i} className="stat-card">
                         <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>{kpi.label}</p>
@@ -454,6 +460,7 @@ const AnalysisTab = ({
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Grupo</th>
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Entradas</th>
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Saídas</th>
+                                    <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Cliques</th>
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--text-muted)' }}>Saldo</th>
                                 </tr>
                             </thead>
@@ -462,10 +469,11 @@ const AnalysisTab = ({
                                     const groupMap = {};
                                     filteredEvents.forEach(e => {
                                         if (!groupMap[e.groupId]) {
-                                            groupMap[e.groupId] = { name: e.groupName || 'Grupo Desconhecido', joins: 0, leaves: 0 };
+                                            groupMap[e.groupId] = { name: e.groupName || 'Grupo Desconhecido', joins: 0, leaves: 0, clicks: 0 };
                                         }
                                         if (e.type === 'join') groupMap[e.groupId].joins++;
                                         if (e.type === 'leave') groupMap[e.groupId].leaves++;
+                                        if (e.type === 'click') groupMap[e.groupId].clicks++;
                                     });
 
                                     const sortedGroups = Object.values(groupMap).sort((a, b) => (b.joins - b.leaves) - (a.joins - a.leaves));
@@ -487,6 +495,7 @@ const AnalysisTab = ({
                                                 <td className="py-3 px-4 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{g.name}</td>
                                                 <td className="py-3 px-4 text-sm text-center font-bold" style={{ color: 'var(--mint)' }}>+{g.joins}</td>
                                                 <td className="py-3 px-4 text-sm text-center font-bold" style={{ color: 'var(--danger)' }}>-{g.leaves}</td>
+                                                <td className="py-3 px-4 text-sm text-center font-bold font-mono text-amber-400">{g.clicks}</td>
                                                 <td className="py-3 px-4 text-sm text-right">
                                                     <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${balance >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                                         {balance > 0 ? '+' : ''}{balance}
@@ -650,6 +659,16 @@ const AnalysisTab = ({
                                                 </div>
                                             </th>
                                             <th
+                                                onClick={() => requestSort('clicks')}
+                                                className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer hover:bg-white/5 transition-colors"
+                                                style={{ color: 'var(--text-muted)' }}
+                                            >
+                                                <div className="flex items-center justify-center gap-1">
+                                                    Cliques
+                                                    <RefreshCw size={10} className={sortConfig.key === 'clicks' ? 'opacity-100' : 'opacity-20'} />
+                                                </div>
+                                            </th>
+                                            <th
                                                 onClick={() => requestSort('balance')}
                                                 className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider text-right cursor-pointer hover:bg-white/5 transition-colors"
                                                 style={{ color: 'var(--text-muted)' }}
@@ -668,6 +687,7 @@ const AnalysisTab = ({
                                                 <td className="py-4 px-6 text-xs font-bold text-white max-w-[300px] truncate" title={row.groupName}>{row.groupName}</td>
                                                 <td className="py-4 px-6 text-xs text-center font-mono text-emerald-400 font-bold">+{row.joins}</td>
                                                 <td className="py-4 px-6 text-xs text-center font-mono text-rose-400 font-bold">-{row.leaves}</td>
+                                                <td className="py-4 px-6 text-xs text-center font-mono text-amber-400 font-bold">{row.clicks}</td>
                                                 <td className={`py-4 px-6 text-sm text-right font-mono font-bold ${row.balance >= 0 ? 'text-blue-400' : 'text-rose-400'}`}>
                                                     {row.balance > 0 ? `+${row.balance}` : row.balance}
                                                 </td>

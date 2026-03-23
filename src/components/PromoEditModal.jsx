@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Image as ImageIcon, Tag, Send } from 'lucide-react';
+import { X, Image as ImageIcon, Tag, Send, Plus } from 'lucide-react';
 
 const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
     const { t } = useTranslation();
@@ -100,233 +100,221 @@ const PromoEditModal = ({ isOpen, onClose, editData, onGenerate }) => {
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/80 backdrop-blur-sm">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="glass-card w-full max-w-md bg-[#1a1c23] border-white/10 shadow-2xl flex flex-col max-h-[90vh]"
+                    className="w-full max-w-lg bg-[#1a1c23] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] rounded-[24px] overflow-hidden"
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-white/5">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center">
-                                <Tag size={16} />
+                    <div className="flex items-center justify-between p-5 border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center border border-orange-500/20">
+                                <Tag size={20} />
                             </div>
-                            <h3 className="font-bold text-white">Editar Promoção</h3>
+                            <h3 className="text-lg font-bold text-white">Editar Promoção</h3>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                            className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors"
                         >
-                            <X size={16} />
+                            <X size={20} />
                         </button>
                     </div>
 
                     {/* Body */}
-                    <div className="p-4 space-y-4 overflow-y-auto custom-scrollbar">
+                    <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                         {/* Imagem */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase">
-                                <ImageIcon size={14} /> Imagem do Produto
-                            </label>
-                            <div className="relative group rounded-xl overflow-hidden bg-black/40 border border-white/5 aspect-square flex items-center justify-center">
-                                {imagePreview ? (
-                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
-                                ) : (
-                                    <ImageIcon size={32} className="text-slate-600" />
-                                )}
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center p-4">
-                                    <p className="text-sm font-bold text-white mb-1">Dê <kbd className="px-1 py-0.5 bg-white/20 rounded text-xs">Ctrl</kbd> + <kbd className="px-1 py-0.5 bg-white/20 rounded text-xs">V</kbd></p>
-                                    <p className="text-xs text-slate-300">Para colar uma nova imagem e substituir esta.</p>
-                                </div>
+                        <div className="relative group rounded-2xl overflow-hidden bg-black/40 border border-white/5 aspect-[16/7] flex items-center justify-center">
+                            {imagePreview ? (
+                                <img src={imagePreview} alt="Preview" className="w-full h-full object-contain" />
+                            ) : (
+                                <ImageIcon size={32} className="text-slate-600" />
+                            )}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center p-4">
+                                <p className="text-sm font-bold text-white mb-1">Dê <kbd className="px-1 py-0.5 bg-white/20 rounded text-xs">Ctrl</kbd> + <kbd className="px-1 py-0.5 bg-white/20 rounded text-xs">V</kbd></p>
+                                <p className="text-xs text-slate-300">Para colar uma nova imagem</p>
                             </div>
-                            <p className="text-[10px] text-slate-500 text-center uppercase tracking-wider">
-                                {imagePreview !== editData.product?.image ? "✨ IMAGEM CUSTOMIZADA!" : "IMAGEM ORIGINAL DO SITE"}
-                            </p>
                         </div>
 
                         {/* Nome do Produto */}
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase">Nome do Produto</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Nome do Produto</label>
                             <input
                                 type="text"
                                 value={customTitleInput}
                                 onChange={(e) => setCustomTitleInput(e.target.value)}
-                                className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Preço De */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase">Preço "De" (R$)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={originalPriceInput}
-                                    onChange={(e) => setOriginalPriceInput(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
-                                />
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setOriginalPriceInput(editData.product?.originalPrice?.toString() || originalPriceInput)}
-                                        className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase transition-colors"
-                                    >
-                                        [Original Site]
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const suggested = (parseFloat(promoPriceInput) || 0) * (1 + ((editData.config?.inflatePercent || 20) / 100));
-                                            setOriginalPriceInput(suggested.toFixed(2));
-                                        }}
-                                        className="text-[10px] text-orange-400 hover:text-orange-300 font-bold uppercase transition-colors"
-                                    >
-                                        [Sugerido +{editData.config?.inflatePercent || 20}%]
-                                    </button>
+                        {/* Seção Preços */}
+                        <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                            <h4 className="text-sm font-bold text-white mb-2">Preços e Parcelamento</h4>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2 relative">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Preço Anterior (De R$)</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={originalPriceInput}
+                                            onChange={(e) => setOriginalPriceInput(e.target.value)}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-orange-500/50 outline-none transition-all pr-32"
+                                        />
+                                        <div className="absolute right-2 top-1.5 flex gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => setOriginalPriceInput(editData.product?.originalPrice?.toString() || originalPriceInput)}
+                                                className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-bold text-slate-400 hover:text-blue-400 flex flex-col items-center gap-0.5 transition-all"
+                                                title="Usar preço original do ML"
+                                            >
+                                                Original
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const current = parseFloat(promoPriceInput) || 0;
+                                                    const inflated = (current * 1.2).toFixed(2);
+                                                    setOriginalPriceInput(inflated);
+                                                }}
+                                                className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-bold text-slate-400 hover:text-orange-400 flex flex-col items-center gap-0.5 transition-all"
+                                                title="Inflar 20% sobre o preço atual"
+                                            >
+                                                <Plus size={10} /> +20%
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Preço de Promoção (Por R$)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={promoPriceInput}
+                                        onChange={(e) => setPromoPriceInput(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-orange-500/50 outline-none transition-all font-bold"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Nº de Parcelas</label>
+                                    <input
+                                        type="number"
+                                        value={installmentsInput}
+                                        onChange={(e) => setInstallmentsInput(parseInt(e.target.value) || 1)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Valor da Parcela (R$)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={installmentValueInput}
+                                        readOnly={interestFree}
+                                        onChange={(e) => setInstallmentValueInput(e.target.value)}
+                                        className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none transition-all ${interestFree ? 'opacity-50 cursor-not-allowed border-emerald-500/20' : 'focus:border-orange-500/50'}`}
+                                    />
                                 </div>
                             </div>
 
-                            {/* Preço Por */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase">Preço "Por" (R$)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={promoPriceInput}
-                                    onChange={(e) => setPromoPriceInput(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
-                                />
-                                <p className="text-[10px] text-slate-500 flex justify-between">
-                                    <span>Real: <strong className="text-white">R$ {editData.product?.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase">Qtd Parcelas</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="24"
-                                    value={installmentsInput}
-                                    onChange={(e) => setInstallmentsInput(parseInt(e.target.value) || 1)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
-                                />
-                            </div>
-
-                            {/* Valor Individual da Parcela */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase">
-                                    Valor da Parcela (R$) {interestFree && <span className="text-[10px] text-emerald-500 ml-1">(AUTO)</span>}
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={installmentValueInput}
-                                    readOnly={interestFree}
-                                    onChange={(e) => setInstallmentValueInput(e.target.value)}
-                                    className={`w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none ${interestFree ? 'opacity-60 cursor-not-allowed border-emerald-500/30' : 'focus:border-whatsapp/50'}`}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            {/* Com Juros / Sem Juros */}
-                            <div className="flex items-center gap-2 px-1">
+                            <div className="flex items-center gap-2 pt-2">
                                 <input
                                     type="checkbox"
                                     id="interestFree"
                                     checked={interestFree}
                                     onChange={(e) => setInterestFree(e.target.checked)}
-                                    className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
+                                    className="w-5 h-5 rounded-lg border-white/10 bg-white/5 accent-orange-500"
                                 />
                                 <label htmlFor="interestFree" className="text-sm text-slate-300 font-bold cursor-pointer">
                                     Parcelamento SEM Juros?
                                 </label>
                             </div>
-
-                            {/* Tipo de Frete */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase">Tipo de Frete</label>
-                                <input
-                                    type="text"
-                                    placeholder="Ex: Grátis"
-                                    value={freightInput}
-                                    onChange={(e) => setFreightInput(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
-                                />
-                            </div>
                         </div>
 
+                        {/* Seção Detalhes */}
+                        <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                            <h4 className="text-sm font-bold text-white mb-2">Detalhes da Promoção e Envio</h4>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Tipo de Frete</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: Grátis"
+                                        value={freightInput}
+                                        onChange={(e) => setFreightInput(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+                                    />
+                                </div>
 
-                        {/* Cupom */}
-                        {coupons.length > 0 && (
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase">Cupom de Desconto</label>
-                                <select
-                                    value={selectedCoupon}
-                                    onChange={(e) => setSelectedCoupon(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-whatsapp/50 outline-none"
-                                >
-                                    <option value="">Nenhum cupom</option>
-                                    {coupons.map((cp, idx) => {
-                                        const code = typeof cp === 'object' ? cp.code : cp;
-                                        return (
-                                            <option key={idx} value={code}>{code}</option>
-                                        );
-                                    })}
-                                </select>
-                            </div>
-                        )}
-
-                        {/* Toggle de exibição do cupom no texto */}
-                        <div className="flex flex-col gap-3 px-1 pt-2 border-t border-white/5">
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="showCouponInMessage"
-                                    checked={showCouponInMessage}
-                                    onChange={(e) => setShowCouponInMessage(e.target.checked)}
-                                    className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
-                                />
-                                <label htmlFor="showCouponInMessage" className="text-sm text-slate-300 font-bold cursor-pointer">
-                                    Exibir CUPOM no texto da mensagem?
-                                </label>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">Cupom de Desconto</label>
+                                    <select
+                                        value={selectedCoupon}
+                                        onChange={(e) => setSelectedCoupon(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-orange-500/50 outline-none transition-all appearance-none"
+                                    >
+                                        <option value="">Nenhum cupom</option>
+                                        {coupons.map((cp, idx) => {
+                                            const code = typeof cp === 'object' ? cp.code : cp;
+                                            return <option key={idx} value={code}>{code}</option>;
+                                        })}
+                                    </select>
+                                </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="showInstallments"
-                                    checked={showInstallments}
-                                    onChange={(e) => setShowInstallments(e.target.checked)}
-                                    className="w-4 h-4 rounded border-white/10 bg-black/20 accent-whatsapp"
-                                />
-                                <label htmlFor="showInstallments" className="text-sm text-slate-300 font-bold cursor-pointer">
-                                    Exibir PARCELAMENTO na imagem e texto?
-                                </label>
+                            {/* Opções de Exibição */}
+                            <div className="p-4 rounded-xl bg-black/20 border border-white/5 space-y-3">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Opções de Exibição de Mensagem</p>
+                                
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="showCouponInMessage"
+                                        checked={showCouponInMessage}
+                                        onChange={(e) => setShowCouponInMessage(e.target.checked)}
+                                        className="w-5 h-5 rounded-lg border-white/10 bg-white/5 accent-orange-500"
+                                    />
+                                    <label htmlFor="showCouponInMessage" className="text-xs text-slate-300 font-bold cursor-pointer">
+                                        Exibir CUPOM no texto da mensagem?
+                                    </label>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="showInstallments"
+                                        checked={showInstallments}
+                                        onChange={(e) => setShowInstallments(e.target.checked)}
+                                        className="w-5 h-5 rounded-lg border-white/10 bg-white/5 accent-orange-500"
+                                    />
+                                    <label htmlFor="showInstallments" className="text-xs text-slate-300 font-bold cursor-pointer">
+                                        Exibir PARCELAMENTO na imagem e texto?
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-white/5 bg-black/20 mt-auto flex justify-end gap-2">
+                    <div className="p-6 border-t border-white/5 bg-black/40 flex justify-end gap-3">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                            className="px-6 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={handleGenerate}
-                            className="px-4 py-2 rounded-lg text-sm font-bold bg-whatsapp hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
+                            className="px-8 py-3 rounded-xl text-sm font-bold bg-white text-black hover:bg-slate-200 shadow-xl flex items-center gap-2 transition-all hover:-translate-y-0.5"
                         >
-                            <Send size={16} />
+                            <Send size={18} />
                             Gerar Promoção
                         </button>
                     </div>

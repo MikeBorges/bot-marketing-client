@@ -93,7 +93,7 @@ const GroupsTab = ({
             const clicks = stats?.[g.id]?.clicks || 0;
             const viewsPct = g.participants > 0 ? ((views / g.participants) * 100) : 0;
             const convPct = views > 0 ? ((clicks / views) * 100) : 0;
-            const createdAt = stats?.[g.id]?.createdAt || null;
+            const createdAt = stats?.[g.id]?.createdAt || g.createdAt || null;
             return { ...g, views, viewsPct, clicks, convPct, createdAt };
         });
 
@@ -173,15 +173,12 @@ const GroupsTab = ({
 
     const exportToCSV = () => {
         const BOM = '\uFEFF'; // UTF-8 BOM para Excel reconhecer acentos
-        const headers = ['Grupo', 'Membros', 'Capacidade (%)', 'Views', 'Views (%)', 'Cliques', 'Conversão (%)', 'Data Criação'];
+        const headers = ['Grupo', 'Membros', 'Capacidade (%)', 'Cliques', 'Data Criação'];
         const rows = analysisData.map(g => [
             `"${g.name.replace(/"/g, '""')}"`,
             g.participants,
             autoConfig?.threshold > 0 ? Math.min(100, ((g.participants / capacityBase) * 100)).toFixed(1) : '-',
-            g.views,
-            g.viewsPct.toFixed(1),
             g.clicks,
-            g.convPct.toFixed(1),
             g.createdAt ? new Date(g.createdAt).toLocaleDateString('pt-BR') : 'N/D'
         ]);
         // Linha de totais
@@ -189,10 +186,7 @@ const GroupsTab = ({
             '"TOTAL"',
             totalMembers,
             '',
-            totalViews,
-            avgViewsPct.toFixed(1) + ' (média)',
             totalClicks,
-            avgConvPct.toFixed(1) + ' (média)',
             ''
         ]);
 
@@ -400,7 +394,7 @@ const GroupsTab = ({
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{t('groups.analysis.totalMembers')}</p>
                                     <p className="text-2xl font-bold text-white">{totalMembers.toLocaleString('pt-BR')}</p>
                                 </div>
-                                <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                                <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5 hidden">
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{t('groups.analysis.totalViews')}</p>
                                     <p className="text-2xl font-bold text-blue-400">{totalViews.toLocaleString('pt-BR')}</p>
                                 </div>
@@ -408,7 +402,7 @@ const GroupsTab = ({
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Total de Cliques</p>
                                     <p className="text-2xl font-bold text-whatsapp">{totalClicks.toLocaleString('pt-BR')}</p>
                                 </div>
-                                <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                                <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5 hidden">
                                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Conversão Média</p>
                                     <p className="text-2xl font-bold text-emerald-400">{avgConvPct.toFixed(1)}%</p>
                                 </div>
@@ -442,9 +436,6 @@ const GroupsTab = ({
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b border-white/5">
-                                            <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold">
-                                                Grupo
-                                            </th>
                                             <th
                                                 className="text-left px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
                                                 onClick={() => requestSort('name')}
@@ -460,27 +451,9 @@ const GroupsTab = ({
                                             <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold hidden md:table-cell">{t('groups.analysis.colCapacity')}</th>
                                             <th
                                                 className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
-                                                onClick={() => requestSort('views')}
-                                            >
-                                                <div className="flex items-center justify-end">{t('groups.analysis.colViews')} <SortIcon column="views" /></div>
-                                            </th>
-                                            <th
-                                                className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
-                                                onClick={() => requestSort('viewsPct')}
-                                            >
-                                                <div className="flex items-center justify-end">{t('groups.analysis.colViewsPct')} <SortIcon column="viewsPct" /></div>
-                                            </th>
-                                            <th
-                                                className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
                                                 onClick={() => requestSort('clicks')}
                                             >
                                                 <div className="flex items-center justify-end">Cliques <SortIcon column="clicks" /></div>
-                                            </th>
-                                            <th
-                                                className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors"
-                                                onClick={() => requestSort('convPct')}
-                                            >
-                                                <div className="flex items-center justify-end">Conversão <SortIcon column="convPct" /></div>
                                             </th>
                                             <th
                                                 className="text-right px-4 py-3 text-xs text-slate-500 uppercase font-bold cursor-pointer hover:text-white transition-colors hidden lg:table-cell"
@@ -525,29 +498,7 @@ const GroupsTab = ({
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-blue-500 rounded-full"
-                                                                    style={{ width: `${Math.min(100, g.viewsPct)}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="text-xs font-bold text-slate-300">{g.viewsPct.toFixed(1)}%</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
                                                         <span className="text-whatsapp font-bold">{g.clicks}</span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-whatsapp rounded-full"
-                                                                    style={{ width: `${Math.min(100, g.convPct)}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="text-xs font-bold text-slate-300">{g.convPct.toFixed(1)}%</span>
-                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-right text-xs text-slate-500 hidden lg:table-cell">
                                                         {g.createdAt ? new Date(g.createdAt).toLocaleDateString('pt-BR') : '—'}
@@ -561,10 +512,7 @@ const GroupsTab = ({
                                                 <td className="px-4 py-3 text-xs text-slate-400 uppercase">{t('groups.analysis.totalRow')}</td>
                                                 <td className="px-4 py-3 text-right text-white">{totalMembers.toLocaleString('pt-BR')}</td>
                                                 <td className="px-4 py-3 hidden md:table-cell" />
-                                                <td className="px-4 py-3 text-right text-blue-400">{totalViews.toLocaleString('pt-BR')}</td>
-                                                <td className="px-4 py-3 text-right text-slate-300">{avgViewsPct.toFixed(1)}%</td>
                                                 <td className="px-4 py-3 text-right text-whatsapp">{totalClicks.toLocaleString('pt-BR')}</td>
-                                                <td className="px-4 py-3 text-right text-emerald-400">{avgConvPct.toFixed(1)}%</td>
                                                 <td className="px-4 py-3 hidden lg:table-cell" />
                                             </tr>
                                         )}

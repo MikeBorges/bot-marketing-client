@@ -143,6 +143,7 @@ const PromoConfig = ({ autoConfig, setAutoConfig, handleSaveConfig }) => {
                                 )}
                             </div>
                             <div className="flex-1">
+                                <p className="text-[10px] text-orange-400 font-bold mb-1 uppercase tracking-wider">Tamanho ideal: 727x800 pixels</p>
                                 <input
                                     type="file"
                                     accept="image/png"
