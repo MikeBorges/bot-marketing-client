@@ -25,17 +25,19 @@ const AnalysisTab = ({
             // Filtro por Grupo (Monitoramento Seletivo)
             if (monitoredIds.length > 0 && !monitoredIds.includes(e.groupId)) return false;
 
+            const eventTs = new Date(e.timestamp).getTime();
+
             if (analysisTimeRange && typeof analysisTimeRange === 'object' && analysisTimeRange.type === 'custom') {
-                return e.timestamp >= analysisTimeRange.from && e.timestamp <= analysisTimeRange.to;
+                return eventTs >= analysisTimeRange.from && eventTs <= analysisTimeRange.to;
             } else if (typeof analysisTimeRange === 'number') {
-                return e.timestamp > Date.now() - analysisTimeRange;
+                return eventTs > Date.now() - analysisTimeRange;
             } else if (typeof analysisTimeRange === 'string' && analysisTimeRange.startsWith('month-')) {
                 const parts = analysisTimeRange.split('-');
                 const year = parseInt(parts[1]);
                 const month = parseInt(parts[2]);
                 const start = new Date(year, month, 1).getTime();
                 const end = new Date(year, month + 1, 1).getTime();
-                return e.timestamp >= start && e.timestamp < end;
+                return eventTs >= start && eventTs < end;
             }
             return true;
         });
@@ -129,14 +131,14 @@ const AnalysisTab = ({
     // Lógica de exportação CSV do Modal (Estilo Excel)
     const downloadFilteredCSV = (data) => {
         const BOM = '\uFEFF';
-        const headers = ["Data", "Grupo", "Entradas", "Saídas", "Cliques", "Saldo"];
+        const headers = ["Data", "Grupo", "Entradas", "Saídas", "Saldo", "Cliques"];
         const rows = data.map(d => [
             d.date,
             `"${(d.groupName || '').replace(/"/g, '""')}"`,
             d.joins,
             d.leaves,
-            d.clicks,
-            d.balance
+            d.balance,
+            d.clicks
         ]);
 
         const csvContent = BOM + [headers, ...rows].map(e => e.join(';')).join('\n');
@@ -462,8 +464,8 @@ const AnalysisTab = ({
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Grupo</th>
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Entradas</th>
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Saídas</th>
-                                    <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Cliques</th>
                                     <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--text-muted)' }}>Saldo</th>
+                                    <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--text-muted)' }}>Cliques</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
@@ -503,12 +505,12 @@ const AnalysisTab = ({
                                                 <td className="py-3 px-4 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{g.name}</td>
                                                 <td className="py-3 px-4 text-sm text-center font-bold" style={{ color: 'var(--mint)' }}>+{g.joins}</td>
                                                 <td className="py-3 px-4 text-sm text-center font-bold" style={{ color: 'var(--danger)' }}>-{g.leaves}</td>
-                                                <td className="py-3 px-4 text-sm text-center font-bold font-mono text-amber-400">{g.clicks}</td>
                                                 <td className="py-3 px-4 text-sm text-right">
                                                     <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${balance >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                                         {balance > 0 ? '+' : ''}{balance}
                                                     </span>
                                                 </td>
+                                                <td className="py-3 px-4 text-sm text-center font-bold font-mono text-amber-400">{g.clicks}</td>
                                             </tr>
                                         );
                                     });
@@ -521,12 +523,12 @@ const AnalysisTab = ({
                                                     <td className="py-4 px-4 text-xs uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>TOTAL GERAL</td>
                                                     <td className="py-4 px-4 text-sm text-center" style={{ color: 'var(--mint)' }}>+{grandTotal.joins}</td>
                                                     <td className="py-4 px-4 text-sm text-center" style={{ color: 'var(--danger)' }}>-{grandTotal.leaves}</td>
-                                                    <td className="py-4 px-4 text-sm text-center text-amber-400 font-mono">{grandTotal.clicks}</td>
                                                     <td className="py-4 px-4 text-sm text-right">
                                                         <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${(grandTotal.joins - grandTotal.leaves) >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                                             {(grandTotal.joins - grandTotal.leaves) > 0 ? '+' : ''}{grandTotal.joins - grandTotal.leaves}
                                                         </span>
                                                     </td>
+                                                    <td className="py-4 px-4 text-sm text-center text-amber-400 font-mono">{grandTotal.clicks}</td>
                                                 </tr>
                                             )}
                                         </>

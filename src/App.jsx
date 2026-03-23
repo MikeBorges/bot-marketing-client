@@ -541,16 +541,28 @@ function App() {
 
   const getFilteredEvents = () => {
     return events.filter(e => {
-      if (analysisTimeRange && typeof analysisTimeRange === 'object' && analysisTimeRange.type === 'custom') {
-        return e.timestamp >= analysisTimeRange.from && e.timestamp <= analysisTimeRange.to;
-        return e.timestamp > Date.now() - analysisTimeRange;
+      if (!analysisTimeRange || analysisTimeRange === 'all') return true;
+      
+      const eventTs = new Date(e.timestamp).getTime();
+
+      if (typeof analysisTimeRange === 'object' && analysisTimeRange.type === 'custom') {
+        return eventTs >= analysisTimeRange.from && eventTs <= analysisTimeRange.to;
+      }
+      
+      if (typeof analysisTimeRange === 'number') {
+        const now = Date.now();
+        return eventTs > now - analysisTimeRange;
+      }
+      
+      if (typeof analysisTimeRange === 'string' && analysisTimeRange.startsWith('month-')) {
         const parts = analysisTimeRange.split('-');
         const year = parseInt(parts[1]);
         const month = parseInt(parts[2]);
         const start = new Date(year, month, 1).getTime();
         const end = new Date(year, month + 1, 1).getTime();
-        return e.timestamp >= start && e.timestamp < end;
+        return eventTs >= start && eventTs < end;
       }
+      
       return true;
     });
   };
@@ -591,15 +603,15 @@ function App() {
       t('analysis.headers.date') || 'Data',
       t('analysis.stats.entries') || 'Entradas',
       t('analysis.stats.exits') || 'Saídas',
-      t('analysis.stats.clicks') || 'Cliques',
-      t('analysis.stats.balance') || 'Saldo'
+      t('analysis.stats.balance') || 'Saldo',
+      t('analysis.stats.clicks') || 'Cliques'
     ];
     const rows = dailyStats.map(d => [
       d.date,
       d.join,
       d.leave,
-      d.click,
-      d.growth
+      d.growth,
+      d.click
     ]);
 
     const csvContent = '\uFEFF' + [headers, ...rows].map(e => e.join(';')).join('\n');
