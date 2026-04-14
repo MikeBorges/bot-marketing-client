@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, User, Crown, AlertCircle, MessageCircle, Eye, Trash2, Megaphone, Send, X, Save, Loader2 } from 'lucide-react';
+import { Shield, User, Crown, AlertCircle, MessageCircle, Eye, Trash2, Megaphone, Send, X, Save, Loader2, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const { t } = useTranslation();
@@ -25,6 +25,8 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     const [selectSpecific, setSelectSpecific] = useState(false);
     const [expiryEdits, setExpiryEdits] = useState({});
     const [updatingExpiryEmail, setUpdatingExpiryEmail] = useState(null);
+    const [whatsappStatus, setWhatsappStatus] = useState({});
+    const [disconnecting, setDisconnecting] = useState(null);
 
     const [activeSubTab, setActiveSubTab] = useState('users');
 
@@ -51,6 +53,43 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
         }
     };
 
+    const fetchWhatsappStatus = async () => {
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${API_URL}/admin/whatsapp-status?email=${userEmail}`);
+            if (response.ok) {
+                const data = await response.json();
+                setWhatsappStatus(data);
+            }
+        } catch (err) {
+            // silently ignore
+        }
+    };
+
+    const handleDisconnectWhatsapp = async (targetEmail) => {
+        if (!window.confirm(`Desconectar o WhatsApp de ${targetEmail}? O usuário precisará reconectar.`)) return;
+        setDisconnecting(targetEmail);
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const response = await fetch(`${API_URL}/admin/disconnect-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requesterEmail: userEmail, targetEmail })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                addNotification(`WhatsApp de ${targetEmail} desconectado!`, 'success');
+                setWhatsappStatus(prev => ({ ...prev, [targetEmail]: { botStatus: 'Desconectado' } }));
+            } else {
+                addNotification(data.error || 'Erro ao desconectar', 'error');
+            }
+        } catch (err) {
+            addNotification('Erro de conexão', 'error');
+        } finally {
+            setDisconnecting(null);
+        }
+    };
+
     const fetchTickets = () => {
         if (!socket) return;
         socket.emit('get_support_tickets');
@@ -59,6 +98,9 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
     useEffect(() => {
         fetchUsers();
         fetchTickets();
+        fetchWhatsappStatus();
+        const statusInterval = setInterval(fetchWhatsappStatus, 15000);
+        return () => { clearInterval(statusInterval); };
 
         if (socket) {
             socket.on('support_tickets_list', (data) => {
@@ -276,6 +318,7 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                     <thead>
                                         <tr className="border-b border-white/5 bg-white/5">
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Usuário</th>
+                                            <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">WhatsApp</th>
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Papel / Cargo</th>
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Plano Atual</th>
                                             <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Última Renovação</th>
@@ -306,6 +349,44 @@ const AdminTab = ({ userEmail, userRole, addNotification, socket }) => {
                                                             <p className="text-xs text-slate-500">{u.email}</p>
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {(() => {
+                                                        const ws = whatsappStatus[u.email];
+                                                        const status = ws?.botStatus || 'Desconectado';
+                                                        const isConnected = status === 'Conectado';
+                                                        const isInitializing = status === 'Iniciando...';
+                                                        return (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                                                                    isConnected
+                                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                                        : isInitializing
+                                                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                                                }`}>
+                                                                    {isConnected ? (
+                                                                        <Wifi size={10} className="shrink-0" />
+                                                                    ) : isInitializing ? (
+                                                                        <RefreshCw size={10} className="animate-spin shrink-0" />
+                                                                    ) : (
+                                                                        <WifiOff size={10} className="shrink-0" />
+                                                                    )}
+                                                                    {isConnected ? 'Online' : isInitializing ? 'Conectando' : 'Offline'}
+                                                                </div>
+                                                                {isConnected && u.email !== userEmail && (
+                                                                    <button
+                                                                        onClick={() => handleDisconnectWhatsapp(u.email)}
+                                                                        disabled={disconnecting === u.email}
+                                                                        className="p-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-all"
+                                                                        title="Desconectar WhatsApp"
+                                                                    >
+                                                                        {disconnecting === u.email ? <Loader2 size={11} className="animate-spin" /> : <WifiOff size={11} />}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
